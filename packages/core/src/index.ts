@@ -23,3 +23,24 @@ export {
   InMemoryVectorBackend,
   HashEmbeddingProvider,
 } from './vector-memory.js';
+export {
+  FrameType,
+  FrameCodec,
+  ConnectionPool,
+  type Frame,
+  type ScenePayload,
+  type ReasonPayload,
+  type MemoryPayload,
+  type AudiencePayload,
+  type HeartbeatPayload,
+  type WSConnection,
+} from './ws-protocol.js';
+export {
+  Counter,
+  Gauge,
+  Histogram,
+  MetricsRegistry,
+  defaultRegistry,
+  type MetricValue,
+  type MetricType,
+} from './metrics.js';
