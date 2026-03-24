@@ -62,25 +62,20 @@ export class MoltBroadcast extends EventEmitter {
       throw new Error('FFmpeg is required but not installed. Install it: brew install ffmpeg');
     }
 
-    const rtmpDest = `${this.config.rtmpUrl}${this.config.streamKey}`;
+    // Ensure proper RTMP path format (Kick needs /app/ between URL and key)
+    let rtmpBase = this.config.rtmpUrl.replace(/\/+$/, '');
+    if (!rtmpBase.endsWith('/app')) {
+      rtmpBase += '/app';
+    }
+    const rtmpDest = `${rtmpBase}/${this.config.streamKey}`;
     const { width, height, fps, bitrate, agentName } = this.config;
 
-    // Generate a test card with animated text overlay
-    // lavfi generates video, we add text overlays
     const args: string[] = [
+      // Real-time pacing
+      '-re',
       // Input: generated test card
       '-f', 'lavfi',
-      '-i', `color=c=0x0a0a0a:s=${width}x${height}:r=${fps},` +
-        // Grid lines
-        `drawgrid=w=60:h=60:t=1:c=0x1a1a1a@0.5,` +
-        // Agent name - big centered
-        `drawtext=text='${agentName}':fontsize=72:fontcolor=0xef4444:x=(w-text_w)/2:y=(h-text_h)/2-60:font=monospace,` +
-        // Status line
-        `drawtext=text='LIVE':fontsize=36:fontcolor=0x22c55e:x=(w-text_w)/2:y=(h/2)+20:font=monospace,` +
-        // Timestamp
-        `drawtext=text='%{localtime}':fontsize=24:fontcolor=0x666666:x=(w-text_w)/2:y=h-60:font=monospace,` +
-        // Animated pulse dot
-        `drawtext=text='●':fontsize=28:fontcolor=0xef4444:x=w/2-180:y=(h/2)+22:font=monospace`,
+      '-i', `testsrc2=size=${width}x${height}:rate=${fps}`,
 
       // Silent audio (Kick requires audio track)
       '-f', 'lavfi',

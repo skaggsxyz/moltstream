@@ -358,6 +358,8 @@ if (process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts
   const apiKey = process.env.LLM_API_KEY || process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY;
   const llmProvider = (process.env.LLM_PROVIDER || (process.env.GEMINI_API_KEY ? 'gemini' : 'anthropic')) as 'gemini' | 'anthropic';
 
+  const chatroomId = process.env.KICK_CHATROOM_ID ? Number(process.env.KICK_CHATROOM_ID) : undefined;
+
   if (!channel || !apiKey) {
     console.error('\n  Usage: KICK_CHANNEL=<slug> GEMINI_API_KEY=<key> node dist/index.js\n');
     process.exit(1);
@@ -374,6 +376,7 @@ if (process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts
 
   const streamer = new MoltStreamer({
     channel,
+    chatroomId,
     llmProvider,
     apiKey,
     kickAuthToken: process.env.KICK_AUTH_TOKEN,
