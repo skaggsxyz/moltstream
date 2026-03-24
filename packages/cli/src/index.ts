@@ -15,7 +15,7 @@ import { writeFile, readFile, access } from 'fs/promises';
 import { join } from 'path';
 import * as readline from 'readline';
 
-const VERSION = '0.4.0';
+const VERSION = '0.7.0';
 const CONFIG_FILE = 'moltstream.yaml';
 
 const program = new Command();
@@ -220,6 +220,25 @@ program
     process.on('SIGTERM', () => { streamer.stop(); process.exit(0); });
 
     await streamer.start();
+
+    // Auto-configure OBS if broadcast config exists
+    if (config.broadcast?.enabled && config.broadcast.rtmpUrl && config.broadcast.streamKey) {
+      console.log('\n  📡 Configuring OBS via WebSocket...');
+      try {
+        const obsOk = await setupOBS(config.broadcast.rtmpUrl, config.broadcast.streamKey);
+        if (obsOk) {
+          console.log('  ✅ OBS configured and streaming!');
+        } else {
+          console.log('  ⚠ OBS not detected. Start OBS manually and add Browser Source: http://localhost:3939');
+        }
+      } catch {
+        console.log('  ⚠ Could not connect to OBS WebSocket. Start OBS manually.');
+        console.log('    1. Open OBS');
+        console.log('    2. Add Browser Source → http://localhost:3939');
+        console.log('    3. Settings → Stream → Custom → paste your RTMP URL + key');
+        console.log('    4. Start Streaming');
+      }
+    }
   });
 
 // ─── STATUS ───
@@ -255,7 +274,123 @@ program
     }
   });
 
+// ─── DOCTOR (preflight check) ───
+
+program
+  .command('doctor')
+  .description('Check system requirements')
+  .action(async () => {
+    console.log(`
+  MoltStream Doctor
+  ─────────────────`);
+
+    // Node version
+    const nodeVer = process.version;
+    const nodeMajor = parseInt(nodeVer.slice(1));
+    console.log(`  Node.js:   ${nodeMajor >= 18 ? '✅' : '❌'} ${nodeVer} ${nodeMajor < 18 ? '(need 18+)' : ''}`);
+
+    // OBS
+    const { execSync } = await import('child_process');
+    let obsOk = false;
+    try {
+      const obsPath = execSync('which obs 2>/dev/null || ls /Applications/OBS.app 2>/dev/null', { encoding: 'utf-8' });
+      obsOk = obsPath.trim().length > 0;
+    } catch {}
+    console.log(`  OBS:       ${obsOk ? '✅ installed' : '❌ not found (brew install --cask obs)'}`);
+
+    // FFmpeg
+    let ffmpegOk = false;
+    try {
+      execSync('which ffmpeg', { encoding: 'utf-8' });
+      ffmpegOk = true;
+    } catch {}
+    console.log(`  FFmpeg:    ${ffmpegOk ? '✅ installed' : '⚠ not found (optional)'}`);
+
+    // Config
+    const configPath = join(process.cwd(), CONFIG_FILE);
+    let configOk = false;
+    try {
+      await access(configPath);
+      configOk = true;
+    } catch {}
+    console.log(`  Config:    ${configOk ? '✅ ' + CONFIG_FILE : '❌ run: npx moltstream init'}`);
+
+    console.log('');
+  });
+
 program.parse();
+
+// ─── OBS WebSocket auto-setup ───
+
+async function setupOBS(rtmpUrl: string, streamKey: string): Promise<boolean> {
+  // Try connecting to OBS WebSocket (port 4455)
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(false), 5000);
+
+    // @ts-ignore
+    import('ws').then((wsModule: any) => {
+      const WS = wsModule.default || wsModule;
+      const ws = new WS('ws://localhost:4455');
+
+      ws.on('error', () => {
+        clearTimeout(timeout);
+        resolve(false);
+      });
+
+      ws.on('open', () => {
+        // OBS WebSocket v5 protocol — identify
+        ws.on('message', async (data: any) => {
+          try {
+            const msg = JSON.parse(data.toString());
+
+            if (msg.op === 0) {
+              // Hello — send Identify
+              ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+            }
+
+            if (msg.op === 2) {
+              // Identified — now configure stream
+              // Set stream service settings
+              ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                  requestType: 'SetStreamServiceSettings',
+                  requestId: 'set-stream',
+                  requestData: {
+                    streamServiceType: 'rtmp_custom',
+                    streamServiceSettings: {
+                      server: rtmpUrl,
+                      key: streamKey,
+                    },
+                  },
+                },
+              }));
+
+              // Start streaming
+              ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                  requestType: 'StartStream',
+                  requestId: 'start-stream',
+                  requestData: {},
+                },
+              }));
+
+              clearTimeout(timeout);
+              setTimeout(() => {
+                ws.close();
+                resolve(true);
+              }, 2000);
+            }
+          } catch {}
+        });
+      });
+    }).catch(() => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+  });
+}
 
 // ─── Simple YAML parser (no deps) ───
 
