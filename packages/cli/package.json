@@ -1,16 +1,30 @@
 {
-  "name": "@moltstream/cli",
+  "name": "moltstream",
   "version": "0.4.0",
-  "description": "CLI tooling — molt init, molt dev, molt stream",
-  "bin": { "molt": "dist/cli.js" },
+  "description": "AI-native streaming infrastructure — one command to go live",
+  "bin": {
+    "moltstream": "dist/index.js",
+    "molt": "dist/index.js"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": { "build": "tsc", "dev": "tsc --watch", "clean": "rm -rf dist" },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ai", "streaming", "kick", "twitch", "live2d", "tts", "vtuber", "autonomous"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skaggsxyz/moltstream"
+  },
+  "homepage": "https://moltstream-site.vercel.app",
   "dependencies": {
+    "@moltstream/streamer": "workspace:*",
+    "@moltstream/kick-chat": "workspace:*",
+    "@moltstream/tts": "workspace:*",
+    "@moltstream/avatar": "workspace:*",
     "@moltstream/core": "workspace:*",
-    "@moltstream/adapters": "workspace:*",
-    "@moltstream/orchestrator": "workspace:*",
-    "@moltstream/policy": "workspace:*",
     "commander": "^13.0.0"
   },
   "license": "MIT"

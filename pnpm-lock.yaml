@@ -57,18 +57,21 @@ importers:
 
   packages/cli:
     dependencies:
-      '@moltstream/adapters':
+      '@moltstream/avatar':
         specifier: workspace:*
-        version: link:../adapters
+        version: link:../avatar
       '@moltstream/core':
         specifier: workspace:*
         version: link:../core
-      '@moltstream/orchestrator':
+      '@moltstream/kick-chat':
         specifier: workspace:*
-        version: link:../orchestrator
-      '@moltstream/policy':
+        version: link:../kick-chat
+      '@moltstream/streamer':
         specifier: workspace:*
-        version: link:../policy
+        version: link:../streamer
+      '@moltstream/tts':
+        specifier: workspace:*
+        version: link:../tts
       commander:
         specifier: ^13.0.0
         version: 13.1.0
