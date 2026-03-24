@@ -1,37 +1,61 @@
-# ⚡ MoltStream
+# 🔴 MoltStream
 
-**AI-native streaming infrastructure.** One command to go live with an autonomous AI streamer.
+**AI Agent Streaming Runtime** — deploy autonomous AI streamers on Kick with one command.
 
-> Your AI agent has no audience. OBS wasn't built for autonomous agents. **We fix that.**
+[![npm version](https://img.shields.io/npm/v/moltstream)](https://www.npmjs.com/package/moltstream)
+[![CI](https://github.com/skaggsxyz/moltstream/actions/workflows/ci.yml/badge.svg)](https://github.com/skaggsxyz/moltstream/actions/workflows/ci.yml)
 
-[![CI](https://github.com/skaggsxyz/moltstream/actions/workflows/ci.yml/badge.svg)](https://github.com/skaggsxyz/moltstream/actions)
+## What is MoltStream?
+
+Like `create-react-app` but for AI streamers. Without us: a week of manual setup (OBS + chat bot + TTS + avatar + scripts). With us: `npx moltstream start`. 30 seconds.
 
 ## Quick Start
 
 ```bash
+# Configure your agent
 npx moltstream init
+
+# Go live
 npx moltstream start
 ```
 
-## What It Does
+That's it. Your AI agent is now streaming on Kick with:
+- 💬 **Chat bot** reading and responding to viewers
+- 🧠 **LLM brain** (Gemini 2.5 Flash / Anthropic Claude)
+- 🔊 **TTS voice** (Fish Audio / ElevenLabs / OpenAI)
+- 🎭 **Animated avatar** with lip sync
+- 📡 **OBS integration** streaming to Kick via RTMP
 
-MoltStream connects an AI agent to a live streaming platform with voice, avatar, and chat interaction — all from a single command.
+## Architecture
 
 ```
-Kick/Twitch Chat → Claude LLM → TTS Voice → Live2D Avatar → Stream
-       ↑                                                        |
-       └────────────────── responds in chat ←───────────────────┘
+Kick Chat (WebSocket)
+    │
+    ▼
+┌──────────────────────────────────┐
+│          MoltStream              │
+│                                  │
+│  Chat → LLM → TTS → Avatar      │
+│         │                │       │
+│    Gemini 2.5       Lip Sync     │
+│    Flash            + Overlay    │
+│                                  │
+└──────────────┬───────────────────┘
+               │ Browser Source
+               ▼
+         OBS → Kick RTMP
 ```
 
-## Pipeline
+## Packages
 
-| Component | Package | Description |
-|-----------|---------|-------------|
-| 💬 Chat | `@moltstream/kick-chat` | Kick.com WebSocket chat client |
-| 🧠 LLM | `@moltstream/streamer` | Claude-powered response generation |
-| 🔊 TTS | `@moltstream/tts` | Fish Audio / ElevenLabs / OpenAI |
-| 🎭 Avatar | `@moltstream/avatar` | Live2D with lip sync (OBS Browser Source) |
-| ⚡ CLI | `moltstream` | Init wizard + one-command startup |
+| Package | Description |
+|---------|-------------|
+| `@moltstream/kick-chat` | Kick chatroom WebSocket client |
+| `@moltstream/streamer` | Core pipeline orchestrator |
+| `@moltstream/tts` | Text-to-speech (Fish/ElevenLabs/OpenAI) |
+| `@moltstream/avatar` | Animated avatar with lip sync + chat overlay |
+| `@moltstream/broadcast` | FFmpeg RTMP broadcast (experimental) |
+| `moltstream` | CLI (`init`, `start`, `status`) |
 
 ## Configuration
 
@@ -39,55 +63,72 @@ Kick/Twitch Chat → Claude LLM → TTS Voice → Live2D Avatar → Stream
 
 ```yaml
 agent:
-  name: "MoltBot"
-  personality: "A witty AI streamer who loves tech"
+  name: "MyAgent"
+  personality: "A witty, engaging AI streamer"
 
 platform:
-  type: "kick"
-  channel: "your-channel"
+  type: kick
+  channel: my-channel
 
 llm:
-  provider: "anthropic"
-  apiKey: "sk-..."
-  model: "claude-sonnet-4-20250514"
+  provider: gemini
+  apiKey: "your-key"
+  model: gemini-2.5-flash
 
 tts:
-  provider: "fish"
-  apiKey: "..."
+  provider: fish
+  apiKey: "your-key"
 
 avatar:
   enabled: true
   port: 3939
+
+broadcast:
+  enabled: true
+  rtmpUrl: "rtmps://..."
+  streamKey: "sk_..."
 ```
 
-## Architecture
+## OBS Setup
 
-MoltStream is a pnpm monorepo:
+MoltStream works with OBS via Browser Source:
 
+### Automatic (recommended)
+```bash
+# MoltStream configures OBS via WebSocket API
+npx moltstream start
 ```
-packages/
-├── cli/          # CLI (npx moltstream init/start)
-├── kick-chat/    # Kick.com WebSocket client
-├── tts/          # Text-to-speech (multi-provider)
-├── avatar/       # Live2D avatar + lip sync server
-├── streamer/     # Pipeline orchestrator
-├── core/         # Core types & config
-├── adapters/     # Platform adapters
-├── orchestrator/ # Agent orchestration
-├── policy/       # Content policy engine
-├── bridge/       # Platform bridges
-├── container/    # Container runtime
-├── audit/        # Audit logging
-└── narrative/    # Narrative engine
-```
+
+### Manual
+1. Install OBS: `brew install --cask obs`
+2. Add **Browser Source** → `http://localhost:3939`
+3. Enable "Control audio via OBS" in Browser Source settings
+4. Set Stream → Custom Server → your Kick RTMP URL + key
+5. Start Streaming
+
+The avatar page includes:
+- Animated character with lip sync
+- Live chat panel (viewer messages)
+- Bot response bubble
+- LIVE badge
 
 ## Requirements
 
-- Node.js 18+
-- Anthropic API key (Claude)
-- TTS API key (Fish Audio recommended — free tier)
-- Kick/Twitch/YouTube account + stream key
-- OBS Studio (for compositing + RTMP)
+- **Node.js** 18+
+- **OBS Studio** 28+ (for streaming)
+- **LLM API key** (Gemini or Anthropic)
+- **Kick account** with stream key
+
+## Environment Variables
+
+```bash
+KICK_CHANNEL=your-channel
+KICK_CHATROOM_ID=12345     # Optional, auto-resolves
+GEMINI_API_KEY=your-key    # or ANTHROPIC_API_KEY
+AVATAR_ENABLED=true
+TTS_PROVIDER=fish           # fish|elevenlabs|openai
+TTS_API_KEY=your-key
+```
 
 ## Development
 
@@ -101,3 +142,8 @@ pnpm run build
 ## License
 
 MIT
+
+---
+
+**Website:** [moltstream-site.vercel.app](https://moltstream-site.vercel.app)
+**npm:** [npmjs.com/package/moltstream](https://www.npmjs.com/package/moltstream)
