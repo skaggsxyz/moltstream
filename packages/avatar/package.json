@@ -1,0 +1,19 @@
+{
+  "name": "@moltstream/avatar",
+  "version": "0.4.0",
+  "description": "MoltStream Avatar — Live2D renderer with lip sync",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.0"
+  },
+  "license": "MIT"
+}

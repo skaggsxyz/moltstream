@@ -8,6 +8,7 @@
 
 import { KickChat, type KickChatMessage } from '@moltstream/kick-chat';
 import { MoltTTS, type TTSConfig } from '@moltstream/tts';
+import { MoltAvatar } from '@moltstream/avatar';
 import Anthropic from '@anthropic-ai/sdk';
 import { EventEmitter } from 'events';
 
@@ -40,6 +41,12 @@ export interface StreamerConfig {
     apiKey: string;
     voice?: string;
   };
+  /** Enable avatar server (OBS Browser Source) */
+  avatar?: {
+    enabled: boolean;
+    port?: number;
+    backgroundColor?: string;
+  };
 }
 
 interface ConversationEntry {
@@ -51,6 +58,7 @@ export class MoltStreamer extends EventEmitter {
   private chat: KickChat;
   private llm: Anthropic;
   private tts: MoltTTS | null = null;
+  private avatar: MoltAvatar | null = null;
   private config: Required<StreamerConfig>;
   private conversation: ConversationEntry[] = [];
   private lastResponseTime = 0;
@@ -72,6 +80,7 @@ export class MoltStreamer extends EventEmitter {
       minMessageLength: config.minMessageLength ?? 3,
       respondEveryN: config.respondEveryN ?? 1,
       tts: config.tts ?? { provider: 'fish', apiKey: '' },
+      avatar: config.avatar ?? { enabled: false },
     };
 
     // Init TTS if configured
@@ -88,6 +97,14 @@ export class MoltStreamer extends EventEmitter {
 
       this.tts.on('generated', (result: any) => {
         console.log(`  🔊 Audio: ${result.filePath} (~${result.durationEstimate.toFixed(1)}s)`);
+      });
+    }
+
+    // Init Avatar if configured
+    if (config.avatar?.enabled) {
+      this.avatar = new MoltAvatar({
+        port: config.avatar.port ?? 3939,
+        backgroundColor: config.avatar.backgroundColor ?? '#00FF00',
       });
     }
 
@@ -134,7 +151,15 @@ export class MoltStreamer extends EventEmitter {
     console.log(`\n  🔴 Starting ${this.config.agentName}...`);
     console.log(`  Model: ${this.config.model}`);
     console.log(`  Cooldown: ${this.config.cooldownSeconds}s`);
-    console.log(`  Respond every: ${this.config.respondEveryN} messages\n`);
+    console.log(`  Respond every: ${this.config.respondEveryN} messages`);
+    if (this.tts) console.log(`  TTS: ${this.config.tts.provider}`);
+    if (this.avatar) console.log(`  Avatar: enabled`);
+    console.log('');
+
+    // Start avatar server if configured
+    if (this.avatar) {
+      await this.avatar.start();
+    }
 
     await this.chat.connect();
   }
@@ -143,6 +168,7 @@ export class MoltStreamer extends EventEmitter {
   stop(): void {
     this.running = false;
     this.chat.disconnect();
+    this.avatar?.stop();
     console.log(`\n  ■ ${this.config.agentName} stopped.\n`);
   }
 
@@ -203,6 +229,11 @@ export class MoltStreamer extends EventEmitter {
         try {
           const audio = await this.tts.speak(text);
           this.emit('audio', audio);
+
+          // Trigger avatar lip sync
+          if (this.avatar) {
+            this.avatar.speak(audio.durationEstimate * 1000).catch(() => {});
+          }
         } catch (ttsErr: any) {
           console.error(`  ✗ TTS error:`, ttsErr.message);
         }
@@ -249,6 +280,11 @@ if (process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts
     cooldownSeconds: Number(process.env.COOLDOWN_SECONDS ?? '5'),
     respondEveryN: Number(process.env.RESPOND_EVERY_N ?? '1'),
     tts: ttsConfig,
+    avatar: process.env.AVATAR_ENABLED === 'true' ? {
+      enabled: true,
+      port: Number(process.env.AVATAR_PORT ?? '3939'),
+      backgroundColor: process.env.AVATAR_BG ?? '#00FF00',
+    } : undefined,
   });
 
   // Graceful shutdown

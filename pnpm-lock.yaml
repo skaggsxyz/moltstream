@@ -39,6 +39,16 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/avatar:
+    dependencies:
+      ws:
+        specifier: ^8.18.0
+        version: 8.20.0
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.5.0
+        version: 8.18.1
+
   packages/bridge:
     dependencies:
       '@moltstream/core':
@@ -134,6 +144,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.39.0
         version: 0.39.0
+      '@moltstream/avatar':
+        specifier: workspace:*
+        version: link:../avatar
       '@moltstream/kick-chat':
         specifier: workspace:*
         version: link:../kick-chat

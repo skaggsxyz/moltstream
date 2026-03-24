@@ -13,6 +13,7 @@
   "dependencies": {
     "@moltstream/kick-chat": "workspace:*",
     "@moltstream/tts": "workspace:*",
+    "@moltstream/avatar": "workspace:*",
     "@anthropic-ai/sdk": "^0.39.0"
   },
   "license": "MIT"
