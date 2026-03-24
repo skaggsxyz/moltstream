@@ -25,5 +25,6 @@
     "node": ">=20.0.0"
   },
   "author": "Tyler Skaggs <skaggsxyz@users.noreply.github.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0"
 }
