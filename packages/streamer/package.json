@@ -14,6 +14,7 @@
     "@moltstream/kick-chat": "workspace:*",
     "@moltstream/tts": "workspace:*",
     "@moltstream/avatar": "workspace:*",
+    "@moltstream/broadcast": "workspace:*",
     "undici": "^7.0.0"
   },
   "license": "MIT"

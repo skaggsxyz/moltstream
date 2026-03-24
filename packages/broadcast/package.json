@@ -1,0 +1,13 @@
+{
+  "name": "@moltstream/broadcast",
+  "version": "0.5.0",
+  "description": "MoltStream Broadcast — FFmpeg RTMP streaming without OBS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "license": "MIT"
+}

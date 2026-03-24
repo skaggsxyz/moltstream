@@ -9,6 +9,7 @@
 import { KickChat, type KickChatMessage } from '@moltstream/kick-chat';
 import { MoltTTS, type TTSConfig } from '@moltstream/tts';
 import { MoltAvatar } from '@moltstream/avatar';
+import { MoltBroadcast } from '@moltstream/broadcast';
 import { EventEmitter } from 'events';
 
 export interface StreamerConfig {
@@ -48,6 +49,16 @@ export interface StreamerConfig {
     port?: number;
     backgroundColor?: string;
   };
+  /** Broadcast config (FFmpeg RTMP — no OBS needed) */
+  broadcast?: {
+    enabled: boolean;
+    rtmpUrl: string;
+    streamKey: string;
+    width?: number;
+    height?: number;
+    fps?: number;
+    bitrate?: number;
+  };
 }
 
 interface ConversationEntry {
@@ -59,6 +70,7 @@ export class MoltStreamer extends EventEmitter {
   private chat: KickChat;
   private tts: MoltTTS | null = null;
   private avatar: MoltAvatar | null = null;
+  private broadcast: MoltBroadcast | null = null;
   private config: Required<StreamerConfig>;
   private conversation: ConversationEntry[] = [];
   private lastResponseTime = 0;
@@ -82,6 +94,7 @@ export class MoltStreamer extends EventEmitter {
       respondEveryN: config.respondEveryN ?? 1,
       tts: config.tts ?? { provider: 'fish', apiKey: '' },
       avatar: config.avatar ?? { enabled: false },
+      broadcast: config.broadcast ?? { enabled: false, rtmpUrl: '', streamKey: '' },
     };
 
     // Init TTS if configured
@@ -106,6 +119,28 @@ export class MoltStreamer extends EventEmitter {
       this.avatar = new MoltAvatar({
         port: config.avatar.port ?? 3939,
         backgroundColor: config.avatar.backgroundColor ?? '#00FF00',
+      });
+    }
+
+    // Init Broadcast if configured
+    if (config.broadcast?.enabled && config.broadcast.rtmpUrl && config.broadcast.streamKey) {
+      this.broadcast = new MoltBroadcast({
+        rtmpUrl: config.broadcast.rtmpUrl,
+        streamKey: config.broadcast.streamKey,
+        avatarUrl: `http://localhost:${this.config.avatar.port}`,
+        width: config.broadcast.width,
+        height: config.broadcast.height,
+        fps: config.broadcast.fps,
+        bitrate: config.broadcast.bitrate,
+        agentName: this.config.agentName,
+      });
+
+      this.broadcast.on('live', () => {
+        console.log(`  📡 MoltStream is LIVE!`);
+      });
+
+      this.broadcast.on('error', (err: Error) => {
+        console.error(`  ✗ Broadcast error:`, err.message);
       });
     }
 
@@ -151,11 +186,17 @@ export class MoltStreamer extends EventEmitter {
     console.log(`  Respond every: ${this.config.respondEveryN} messages`);
     if (this.tts) console.log(`  TTS: ${this.config.tts.provider}`);
     if (this.avatar) console.log(`  Avatar: enabled`);
+    if (this.broadcast) console.log(`  Broadcast: enabled`);
     console.log('');
 
     // Start avatar server if configured
     if (this.avatar) {
       await this.avatar.start();
+    }
+
+    // Start broadcast if configured
+    if (this.broadcast) {
+      await this.broadcast.start();
     }
 
     await this.chat.connect();
@@ -166,6 +207,7 @@ export class MoltStreamer extends EventEmitter {
     this.running = false;
     this.chat.disconnect();
     this.avatar?.stop();
+    this.broadcast?.stop();
     console.log(`\n  ■ ${this.config.agentName} stopped.\n`);
   }
 
@@ -344,6 +386,15 @@ if (process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts
       enabled: true,
       port: Number(process.env.AVATAR_PORT ?? '3939'),
       backgroundColor: process.env.AVATAR_BG ?? '#00FF00',
+    } : undefined,
+    broadcast: process.env.BROADCAST_ENABLED === 'true' ? {
+      enabled: true,
+      rtmpUrl: process.env.RTMP_URL || '',
+      streamKey: process.env.STREAM_KEY || '',
+      width: Number(process.env.BROADCAST_WIDTH ?? '1920'),
+      height: Number(process.env.BROADCAST_HEIGHT ?? '1080'),
+      fps: Number(process.env.BROADCAST_FPS ?? '30'),
+      bitrate: Number(process.env.BROADCAST_BITRATE ?? '4500'),
     } : undefined,
   });
 

@@ -73,6 +73,13 @@ program
       console.log('\n  --- Streaming ---\n');
       const kickToken = await ask('Kick auth token (for sending chat messages, optional)');
       const avatarEnabled = await ask('Enable avatar? (yes/no)', 'yes');
+      const broadcastEnabled = await ask('Enable FFmpeg broadcast? (yes/no)', 'yes');
+      let rtmpUrl = '';
+      let streamKey = '';
+      if (broadcastEnabled.toLowerCase().startsWith('y')) {
+        rtmpUrl = await ask('RTMP URL', 'rtmps://fa723fc1b171.global-contribute.live-video.net/');
+        streamKey = await ask('Stream Key');
+      }
 
       // Generate config
       const config = `# MoltStream Configuration
@@ -102,6 +109,15 @@ avatar:
   enabled: ${avatarEnabled.toLowerCase().startsWith('y')}
   port: 3939
   backgroundColor: "#00FF00"
+
+broadcast:
+  enabled: ${broadcastEnabled.toLowerCase().startsWith('y')}
+  rtmpUrl: "${rtmpUrl}"
+  streamKey: "${streamKey}"
+  width: 1920
+  height: 1080
+  fps: 30
+  bitrate: 4500
 
 stream:
   cooldownSeconds: 5
@@ -188,6 +204,15 @@ program
         port: Number(config.avatar?.port ?? 3939),
         backgroundColor: config.avatar?.backgroundColor ?? '#00FF00',
       } : undefined,
+      broadcast: config.broadcast?.enabled && config.broadcast.rtmpUrl && config.broadcast.streamKey ? {
+        enabled: true,
+        rtmpUrl: config.broadcast.rtmpUrl,
+        streamKey: config.broadcast.streamKey,
+        width: Number(config.broadcast.width ?? 1920),
+        height: Number(config.broadcast.height ?? 1080),
+        fps: Number(config.broadcast.fps ?? 30),
+        bitrate: Number(config.broadcast.bitrate ?? 4500),
+      } : undefined,
     });
 
     // Graceful shutdown
@@ -218,6 +243,7 @@ program
   LLM:       ${config.llm?.provider || '?'} (${config.llm?.model || '?'})
   TTS:       ${config.tts?.apiKey ? '✅ ' + config.tts.provider : '❌ not configured'}
   Avatar:    ${config.avatar?.enabled !== false ? '✅ port ' + (config.avatar?.port || 3939) : '❌ disabled'}
+  Broadcast: ${config.broadcast?.enabled && config.broadcast.rtmpUrl ? '✅ to ' + config.broadcast.rtmpUrl.slice(0, 20) + '...' : '❌ disabled'}
 `);
     } catch {
       console.log(`

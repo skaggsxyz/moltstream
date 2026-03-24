@@ -55,6 +55,8 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/broadcast: {}
+
   packages/cli:
     dependencies:
       '@moltstream/avatar':
@@ -147,6 +149,9 @@ importers:
       '@moltstream/avatar':
         specifier: workspace:*
         version: link:../avatar
+      '@moltstream/broadcast':
+        specifier: workspace:*
+        version: link:../broadcast
       '@moltstream/kick-chat':
         specifier: workspace:*
         version: link:../kick-chat
