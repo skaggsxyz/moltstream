@@ -58,3 +58,11 @@ export {
   type ErrorSeverity,
   type ErrorCategory,
 } from './errors.js';
+export {
+  PluginManager,
+  type MoltPlugin,
+  type PluginHooks,
+  type PluginManifest,
+  type PluginContext,
+  type ChatMessage,
+} from './plugin.js';
