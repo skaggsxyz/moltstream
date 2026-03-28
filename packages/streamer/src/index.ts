@@ -427,4 +427,5 @@ if (process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts
   });
 }
 
+export { startHealthServer, type HealthStatus, type HealthCheckConfig } from './health.js';
 export default MoltStreamer;
