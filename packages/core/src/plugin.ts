@@ -127,57 +127,57 @@ export class PluginManager {
         await reg.plugin.onInit?.(ctx);
         this.logger.info(`Initialized plugin: ${name}`);
       } catch (err) {
-        this.logger.error(`Failed to init plugin "${name}":`, err);
+        this.logger.error(`Failed to init plugin "${name}": ${err}`);
         reg.enabled = false;
       }
     }
 
     this.initialized = true;
-    this.events.emit({ type: 'plugin:all-initialized', data: { count: sorted.length } });
+    this.events.emit('plugin:all-initialized', { count: sorted.length });
   }
 
   /** Dispatch a message to all enabled plugins */
-  async dispatchMessage(message: ChatMessage): Promise<void> {
+  async dispatchMessage(message: ChatMessage, config: Record<string, unknown> = {}): Promise<void> {
     for (const [, reg] of this.enabledPlugins()) {
       try {
-        await reg.plugin.onMessage?.(this.createContext({}), message);
+        await reg.plugin.onMessage?.(this.createContext(config), message);
       } catch (err) {
-        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onMessage error:`, err);
+        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onMessage error: ${err}`);
       }
     }
   }
 
   /** Dispatch a scene change to all enabled plugins */
-  async dispatchSceneChange(from: string, to: string): Promise<void> {
+  async dispatchSceneChange(from: string, to: string, config: Record<string, unknown> = {}): Promise<void> {
     for (const [, reg] of this.enabledPlugins()) {
       try {
-        await reg.plugin.onSceneChange?.(this.createContext({}), from, to);
+        await reg.plugin.onSceneChange?.(this.createContext(config), from, to);
       } catch (err) {
-        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onSceneChange error:`, err);
+        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onSceneChange error: ${err}`);
       }
     }
   }
 
   /** Dispatch tick to all enabled plugins */
-  async dispatchTick(): Promise<void> {
+  async dispatchTick(config: Record<string, unknown> = {}): Promise<void> {
     for (const [, reg] of this.enabledPlugins()) {
       try {
-        await reg.plugin.onTick?.(this.createContext({}));
+        await reg.plugin.onTick?.(this.createContext(config));
       } catch (err) {
-        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onTick error:`, err);
+        this.logger.error(`Plugin "${reg.plugin.manifest.name}" onTick error: ${err}`);
       }
     }
   }
 
   /** Gracefully shut down all plugins in reverse order */
-  async shutdown(): Promise<void> {
+  async shutdown(config: Record<string, unknown> = {}): Promise<void> {
     const sorted = [...this.enabledPlugins()].reverse();
     for (const [, reg] of sorted) {
       try {
-        await reg.plugin.onShutdown?.(this.createContext({}));
+        await reg.plugin.onShutdown?.(this.createContext(config));
         this.logger.info(`Shut down plugin: ${reg.plugin.manifest.name}`);
       } catch (err) {
-        this.logger.error(`Plugin "${reg.plugin.manifest.name}" shutdown error:`, err);
+        this.logger.error(`Plugin "${reg.plugin.manifest.name}" shutdown error: ${err}`);
       }
     }
     this.initialized = false;

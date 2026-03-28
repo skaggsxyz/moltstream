@@ -152,6 +152,9 @@ importers:
       '@moltstream/broadcast':
         specifier: workspace:*
         version: link:../broadcast
+      '@moltstream/core':
+        specifier: workspace:*
+        version: link:../core
       '@moltstream/kick-chat':
         specifier: workspace:*
         version: link:../kick-chat
