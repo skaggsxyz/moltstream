@@ -11,7 +11,7 @@ import type {
 import { buildTurnaroundPrompt, buildPortraitPrompt } from "./prompts/index.js";
 
 // Model selection: nano-banana-pro for photorealistic, gemini-2.5-flash-image for stylized
-const REALISTIC_MODEL = "nano-banana-pro-preview";
+const REALISTIC_MODEL = "gemini-3-pro-image-preview";
 const STYLIZED_MODEL = "gemini-2.5-flash-image";
 
 function buildImageParts(
