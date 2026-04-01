@@ -8,11 +8,11 @@ const STYLE_DESCRIPTORS: Record<string, string> = {
   anime:
     "anime art style, vibrant colors, clean linework, expressive features, Studio Ghibli meets modern anime aesthetic",
   realistic:
-    "photorealistic digital art, highly detailed, cinematic lighting, professional concept art quality",
+    "photorealistic digital art, highly detailed, cinematic studio lighting, professional concept art quality, hyper-realistic skin textures",
   pixel:
     "pixel art style, 32-bit era aesthetics, clean pixel work, retro gaming character design",
   cyberpunk:
-    "cyberpunk aesthetic, neon-lit, chrome accents, futuristic tech wear, Blade Runner meets Ghost in the Shell",
+    "cyberpunk aesthetic, neon accents on clothing and accessories, chrome details, futuristic tech wear",
   watercolor:
     "watercolor illustration style, soft washes, flowing colors, artistic and painterly, visible brushstrokes",
   comic:
@@ -55,9 +55,17 @@ export function buildTurnaroundPrompt(
   style: StyleConfig
 ): string {
   const styleDesc =
-    STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.anime;
+    STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.realistic;
 
-  return `Create a professional character turnaround sheet showing THREE views of the same character: front view, three-quarter view, and profile (side) view. All three poses on a single image, evenly spaced, on a clean neutral background.
+  return `Create a professional AI influencer / virtual streamer CHARACTER REFERENCE SHEET — a single image with a clean pure white background (#FFFFFF), containing multiple views of the SAME character arranged in a structured layout:
+
+LAYOUT (all on one image, white background):
+- TOP LEFT: Large close-up head shot, front-facing, detailed face visible
+- TOP RIGHT: Head shot from left profile (side view)
+- BOTTOM LEFT: Full body front view, standing pose, feet visible
+- BOTTOM RIGHT: Full body back view, standing pose, showing outfit from behind
+
+Each view must show the EXACT same person with IDENTICAL features, hair, outfit, and accessories — just from different angles. Character must be CONSISTENT across all four panels.
 
 ART STYLE: ${styleDesc}
 ${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette} tones` : ""}
@@ -67,17 +75,19 @@ CHARACTER DESCRIPTION:
 ${buildIdentityDescription(identity)}
 ${body ? "\n" + buildBodyDescription(body) : ""}
 
-OUTFIT: ${style.outfit || "Casual modern streamer outfit — hoodie, comfortable fit"}
-ACCESSORIES: ${style.accessories?.join(", ") || "Gaming headset around neck"}
+OUTFIT: ${style.outfit || "Modern streetwear — clean hoodie or tech jacket, fitted pants, sneakers"}
+ACCESSORIES: ${style.accessories?.join(", ") || "Minimal accessories"}
 ${style.customNotes ? `ADDITIONAL NOTES: ${style.customNotes}` : ""}
 
-REQUIREMENTS:
-- Single image with all three views side by side
-- Consistent character design across all views
-- Full body visible in all three poses
-- Character should look like a streaming/content creator avatar
-- High quality, clean design suitable for use as a virtual streamer avatar
-- The character must clearly reflect the described facial features and body type`;
+CRITICAL REQUIREMENTS:
+- PURE WHITE background (#FFFFFF) — no gradients, no patterns, no environment
+- Professional studio lighting — soft, even, no harsh shadows on background
+- All four views show the SAME character with perfect consistency
+- The face must preserve ALL described facial features exactly
+- Clean separation between the four views
+- High quality, sharp details, professional character sheet
+- This is an AI influencer avatar — should look polished and appealing
+- NO text, NO labels, NO watermarks on the image`;
 }
 
 export function buildPortraitPrompt(
@@ -85,9 +95,11 @@ export function buildPortraitPrompt(
   style: StyleConfig
 ): string {
   const styleDesc =
-    STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.anime;
+    STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.realistic;
 
-  return `Create a stunning close-up portrait of a character — head and upper shoulders, facing slightly toward the camera with a confident expression. This is a streamer avatar portrait.
+  return `Create a stunning close-up portrait of an AI influencer / virtual streamer character — head and upper shoulders, facing slightly toward the camera with a confident, charismatic expression.
+
+PURE WHITE background (#FFFFFF) — no gradients, no patterns, no environment. Professional studio lighting.
 
 ART STYLE: ${styleDesc}
 ${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette} tones` : ""}
@@ -96,16 +108,17 @@ ${style.mood ? `MOOD/ENERGY: ${style.mood}` : ""}
 CHARACTER DESCRIPTION:
 ${buildIdentityDescription(identity)}
 
-OUTFIT (visible at shoulders): ${style.outfit || "Casual modern streamer outfit"}
-ACCESSORIES: ${style.accessories?.join(", ") || "Gaming headset around neck"}
+OUTFIT (visible at shoulders): ${style.outfit || "Modern clean outfit"}
+ACCESSORIES: ${style.accessories?.join(", ") || "Minimal"}
 ${style.customNotes ? `ADDITIONAL NOTES: ${style.customNotes}` : ""}
 
 REQUIREMENTS:
-- Close-up portrait, head and upper shoulders
-- Dramatic, professional lighting
-- Expressive eyes that convey personality
+- Close-up portrait, head and upper shoulders only
+- PURE WHITE background (#FFFFFF)
+- Professional studio lighting, soft and even
+- Expressive eyes that convey personality and charisma
 - High detail, 4K quality
-- Background: ${style.background || "subtle gradient or atmospheric bokeh"}
-- The portrait must clearly reflect the described facial features
-- Suitable as a profile picture / streaming avatar`;
+- The portrait must clearly reflect ALL described facial features
+- Polished AI influencer look — appealing and professional
+- NO text, NO labels, NO watermarks`;
 }
