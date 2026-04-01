@@ -8,7 +8,7 @@ const STYLE_DESCRIPTORS: Record<string, string> = {
   anime:
     "anime art style, vibrant colors, clean linework, expressive features, Studio Ghibli meets modern anime aesthetic",
   realistic:
-    "photorealistic digital art, highly detailed, cinematic studio lighting, professional concept art quality, hyper-realistic skin textures",
+    "professional studio photograph, shot on Canon EOS R5 with 85mm f/1.4 lens, real human being, NOT illustration, NOT 3D render, NOT digital art — actual photo with real skin pores, real hair strands, natural skin imperfections, studio softbox lighting, fashion editorial quality, Vogue magazine photo shoot",
   pixel:
     "pixel art style, 32-bit era aesthetics, clean pixel work, retro gaming character design",
   cyberpunk:
@@ -87,7 +87,16 @@ CRITICAL REQUIREMENTS:
 - Clean separation between the four views
 - High quality, sharp details, professional character sheet
 - This is an AI influencer avatar — should look polished and appealing
-- NO text, NO labels, NO watermarks on the image`;
+- NO text, NO labels, NO watermarks on the image
+${style.artStyle === "realistic" ? `
+PHOTOREALISM REQUIREMENTS (CRITICAL):
+- This must look like a REAL PHOTOGRAPH of a REAL PERSON — not an illustration, not a 3D render, not digital art
+- Real skin with pores, subtle blemishes, natural texture — NOT smooth/plastic CGI skin
+- Real hair with individual strands visible — NOT stylized/painted hair
+- Natural eye reflections and catchlights as seen in real photography
+- Clothing with real fabric texture, natural folds and creases
+- Think: professional fashion/editorial photo shoot in a white studio
+- The viewer should NOT be able to tell this is AI-generated` : ""}`;
 }
 
 export function buildPortraitPrompt(
@@ -120,5 +129,12 @@ REQUIREMENTS:
 - High detail, 4K quality
 - The portrait must clearly reflect ALL described facial features
 - Polished AI influencer look — appealing and professional
-- NO text, NO labels, NO watermarks`;
+- NO text, NO labels, NO watermarks
+${style.artStyle === "realistic" ? `
+PHOTOREALISM REQUIREMENTS (CRITICAL):
+- This must look like a REAL PHOTOGRAPH — not illustration, not 3D render
+- Real skin with pores and natural texture, NOT smooth CGI
+- Real hair with individual strands, natural lighting on hair
+- Professional fashion photography quality — think Vogue, GQ editorial
+- The viewer should NOT be able to tell this is AI-generated` : ""}`;
 }
