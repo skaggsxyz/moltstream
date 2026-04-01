@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm turbo run build --filter=character-web...",
+  "outputDirectory": "apps/character-web/.next",
+  "framework": "nextjs",
+  "installCommand": "pnpm install"
+}

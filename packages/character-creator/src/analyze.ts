@@ -12,7 +12,7 @@ import type {
 } from "./types.js";
 import { FACE_ANALYSIS_PROMPT, BODY_ANALYSIS_PROMPT } from "./prompts/index.js";
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash-preview-05-20";
 
 function bufferToGenerativePart(buffer: Buffer, mimeType: string) {
   return {

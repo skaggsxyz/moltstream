@@ -10,7 +10,7 @@ import type {
 } from "./types.js";
 import { buildTurnaroundPrompt, buildPortraitPrompt } from "./prompts/index.js";
 
-const IMAGEN_MODEL = "gemini-2.0-flash-preview-image-generation";
+const IMAGEN_MODEL = "gemini-2.0-flash-exp-image-generation";
 
 /**
  * Generate avatar images (turnaround sheet + portrait) from character data
