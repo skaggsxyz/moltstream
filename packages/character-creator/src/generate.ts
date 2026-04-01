@@ -94,38 +94,10 @@ export async function generateAvatar(
     );
   }
 
-  // --- Generate portrait ---
-  const portraitPrompt = buildPortraitPrompt(
-    request.identityBlock,
-    request.styleConfig
-  );
-
-  const portraitParts = buildImageParts(request, portraitPrompt);
-  const portraitResult = await model.generateContent(portraitParts);
-  const portraitResponse = portraitResult.response;
-
-  let portraitImageBase64 = "";
-  let portraitMimeType = "image/png";
-
-  for (const candidate of portraitResponse.candidates || []) {
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData) {
-        portraitImageBase64 = part.inlineData.data;
-        portraitMimeType = part.inlineData.mimeType || "image/png";
-        break;
-      }
-    }
-    if (portraitImageBase64) break;
-  }
-
-  if (!portraitImageBase64) {
-    throw new Error("Failed to generate portrait — no image in response");
-  }
-
   return {
     turnaroundImageBase64,
-    portraitImageBase64,
+    portraitImageBase64: "",
     turnaroundMimeType,
-    portraitMimeType,
+    portraitMimeType: "",
   };
 }
