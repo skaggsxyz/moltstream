@@ -8,7 +8,7 @@ const STYLE_DESCRIPTORS: Record<string, string> = {
   anime:
     "anime art style, vibrant colors, clean linework, expressive features, Studio Ghibli meets modern anime aesthetic",
   realistic:
-    "professional studio photograph, shot on Canon EOS R5 with 85mm f/1.4 lens, real human being, NOT illustration, NOT 3D render, NOT digital art — actual photo with real skin pores, real hair strands, natural skin imperfections, studio softbox lighting, fashion editorial quality, Vogue magazine photo shoot",
+    "professional studio photograph of a real person, shot on Canon EOS R5 85mm f/1.4, NOT illustration, NOT drawing, NOT 3D render, NOT digital art, NOT painting — this must be indistinguishable from a real photograph of a real human being",
   pixel:
     "pixel art style, 32-bit era aesthetics, clean pixel work, retro gaming character design",
   cyberpunk:
@@ -25,28 +25,27 @@ const STYLE_DESCRIPTORS: Record<string, string> = {
 
 function buildIdentityDescription(identity: IdentityBlock): string {
   return `
-FACIAL FEATURES:
 - Face shape: ${identity.faceShape}
-- Nose: ${identity.nose.shape}, ${identity.nose.size} size, ${identity.nose.bridge} bridge
+- Nose: ${identity.nose.shape}, ${identity.nose.size}, ${identity.nose.bridge} bridge
 - Lips: ${identity.lips.shape}, ${identity.lips.size}
 - Eyes: ${identity.eyes.shape}, ${identity.eyes.size}, ${identity.eyes.color}, ${identity.eyes.spacing} spacing
 - Eyebrows: ${identity.eyebrows.shape}, ${identity.eyebrows.thickness}, ${identity.eyebrows.color}
 - Skin: ${identity.skinTone.shade} with ${identity.skinTone.undertone} undertone
-- Hair: ${identity.hair.color}, ${identity.hair.texture}, ${identity.hair.length}, styled as ${identity.hair.style}
-${identity.distinguishingFeatures.length > 0 ? `- Distinguishing features: ${identity.distinguishingFeatures.join(", ")}` : ""}
-- Overall vibe: ${identity.overallVibe}`.trim();
+- Hair: ${identity.hair.color}, ${identity.hair.texture}, ${identity.hair.length}, ${identity.hair.style}
+${identity.distinguishingFeatures.length > 0 ? `- Distinguishing features: ${identity.distinguishingFeatures.join(", ")}` : ""}`.trim();
 }
 
 function buildBodyDescription(body: BodyBlock): string {
   return `
-BODY CHARACTERISTICS:
 - Build: ${body.build}
-- Shoulders: ${body.proportions.shoulders}
-- Torso: ${body.proportions.torso}
-- Legs: ${body.proportions.legs}
-- Height impression: ${body.estimatedHeight}
+- Shoulders: ${body.proportions.shoulders}, Torso: ${body.proportions.torso}, Legs: ${body.proportions.legs}
+- Height: ${body.estimatedHeight}
 ${body.tattoos.length > 0 ? `- Tattoos: ${body.tattoos.join(", ")}` : ""}
-${body.distinguishingFeatures.length > 0 ? `- Notable features: ${body.distinguishingFeatures.join(", ")}` : ""}`.trim();
+${body.distinguishingFeatures.length > 0 ? `- Features: ${body.distinguishingFeatures.join(", ")}` : ""}`.trim();
+}
+
+function isRealistic(style: StyleConfig): boolean {
+  return style.artStyle === "realistic";
 }
 
 export function buildTurnaroundPrompt(
@@ -57,46 +56,66 @@ export function buildTurnaroundPrompt(
   const styleDesc =
     STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.realistic;
 
-  return `Create a professional AI influencer / virtual streamer CHARACTER REFERENCE SHEET — a single image with a clean pure white background (#FFFFFF), containing multiple views of the SAME character arranged in a structured layout:
+  if (isRealistic(style)) {
+    // Photorealistic path — completely different prompt structure
+    return `Create a professional MODEL AGENCY COMPOSITE CARD / CHARACTER REFERENCE SHEET.
 
-LAYOUT (all on one image, white background):
-- TOP LEFT: Large close-up head shot, front-facing, detailed face visible
-- TOP RIGHT: Head shot from left profile (side view)
-- BOTTOM LEFT: Full body front view, standing pose, feet visible
-- BOTTOM RIGHT: Full body back view, standing pose, showing outfit from behind
+This is a REAL PHOTOGRAPH of a REAL PERSON taken during a professional photo shoot in a white studio. 
+This is NOT art. This is NOT an illustration. This is NOT a render. This is a PHOTOGRAPH.
 
-Each view must show the EXACT same person with IDENTICAL features, hair, outfit, and accessories — just from different angles. Character must be CONSISTENT across all four panels.
+LAYOUT — single image, pure white studio background:
+- TOP LEFT: Head shot, front-facing, shoulders up. Like a professional headshot/casting photo.
+- TOP RIGHT: Head shot, left profile (side view). Same person, same lighting.
+- BOTTOM LEFT: Full body, front view, standing naturally. Like a model agency card.
+- BOTTOM RIGHT: Full body, back view, same pose from behind.
 
-ART STYLE: ${styleDesc}
-${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette} tones` : ""}
-${style.mood ? `MOOD/ENERGY: ${style.mood}` : ""}
-
-CHARACTER DESCRIPTION:
+THE PERSON:
 ${buildIdentityDescription(identity)}
 ${body ? "\n" + buildBodyDescription(body) : ""}
 
-OUTFIT: ${style.outfit || "Modern streetwear — clean hoodie or tech jacket, fitted pants, sneakers"}
-ACCESSORIES: ${style.accessories?.join(", ") || "Minimal accessories"}
-${style.customNotes ? `ADDITIONAL NOTES: ${style.customNotes}` : ""}
+CLOTHING: ${style.outfit || "Black fitted jacket, dark pants, clean white sneakers"}
+ACCESSORIES: ${style.accessories?.join(", ") || "Minimal — small jewelry"}
+${style.customNotes ? `NOTES: ${style.customNotes}` : ""}
 
-CRITICAL REQUIREMENTS:
-- PURE WHITE background (#FFFFFF) — no gradients, no patterns, no environment
-- Professional studio lighting — soft, even, no harsh shadows on background
+PHOTOGRAPHIC REQUIREMENTS:
+- Shot in a white cyclorama studio with professional softbox lighting
+- Real human skin — visible pores, natural color variation, micro-wrinkles, no airbrushing
+- Real hair — individual strands, natural flyaways, not stylized
+- Real eyes — natural catchlights, visible iris detail, slight redness in sclera  
+- Real clothing — fabric texture, natural creases, proper draping on body
+- Consistent person across all 4 views — IDENTICAL face, hair, build, outfit
+- Color temperature: neutral/slightly warm (5600K studio lights)
+- This should be indistinguishable from a real photo if shown to someone
+- NO text, NO labels, NO watermarks, NO borders between panels`;
+  }
+
+  // Non-realistic (stylized) path
+  return `Create a CHARACTER REFERENCE SHEET — a single image with a clean pure white background, containing multiple views of the SAME character:
+
+LAYOUT (all on one image, white background):
+- TOP LEFT: Large close-up head shot, front-facing
+- TOP RIGHT: Head shot from left profile (side view)
+- BOTTOM LEFT: Full body front view, standing pose
+- BOTTOM RIGHT: Full body back view, standing pose
+
+ART STYLE: ${styleDesc}
+${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette}` : ""}
+${style.mood ? `MOOD: ${style.mood}` : ""}
+
+CHARACTER:
+${buildIdentityDescription(identity)}
+${body ? "\n" + buildBodyDescription(body) : ""}
+
+OUTFIT: ${style.outfit || "Modern streetwear — clean hoodie or jacket, fitted pants, sneakers"}
+ACCESSORIES: ${style.accessories?.join(", ") || "Minimal"}
+${style.customNotes ? `NOTES: ${style.customNotes}` : ""}
+
+REQUIREMENTS:
+- Pure white background
 - All four views show the SAME character with perfect consistency
-- The face must preserve ALL described facial features exactly
-- Clean separation between the four views
-- High quality, sharp details, professional character sheet
-- This is an AI influencer avatar — should look polished and appealing
-- NO text, NO labels, NO watermarks on the image
-${style.artStyle === "realistic" ? `
-PHOTOREALISM REQUIREMENTS (CRITICAL):
-- This must look like a REAL PHOTOGRAPH of a REAL PERSON — not an illustration, not a 3D render, not digital art
-- Real skin with pores, subtle blemishes, natural texture — NOT smooth/plastic CGI skin
-- Real hair with individual strands visible — NOT stylized/painted hair
-- Natural eye reflections and catchlights as seen in real photography
-- Clothing with real fabric texture, natural folds and creases
-- Think: professional fashion/editorial photo shoot in a white studio
-- The viewer should NOT be able to tell this is AI-generated` : ""}`;
+- Clean separation between views
+- High quality, polished design
+- NO text, NO labels, NO watermarks`;
 }
 
 export function buildPortraitPrompt(
@@ -106,35 +125,44 @@ export function buildPortraitPrompt(
   const styleDesc =
     STYLE_DESCRIPTORS[style.artStyle] || STYLE_DESCRIPTORS.realistic;
 
-  return `Create a stunning close-up portrait of an AI influencer / virtual streamer character — head and upper shoulders, facing slightly toward the camera with a confident, charismatic expression.
+  if (isRealistic(style)) {
+    return `Professional headshot photograph of a real person. White studio background. Shot on Canon EOS R5 with 85mm f/1.4 lens. Soft studio lighting.
 
-PURE WHITE background (#FFFFFF) — no gradients, no patterns, no environment. Professional studio lighting.
+This is a REAL PHOTOGRAPH, NOT an illustration, NOT a render, NOT digital art.
 
-ART STYLE: ${styleDesc}
-${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette} tones` : ""}
-${style.mood ? `MOOD/ENERGY: ${style.mood}` : ""}
-
-CHARACTER DESCRIPTION:
+THE PERSON:
 ${buildIdentityDescription(identity)}
 
-OUTFIT (visible at shoulders): ${style.outfit || "Modern clean outfit"}
-ACCESSORIES: ${style.accessories?.join(", ") || "Minimal"}
-${style.customNotes ? `ADDITIONAL NOTES: ${style.customNotes}` : ""}
+Wearing: ${style.outfit || "Clean modern outfit"}
+${style.accessories?.length ? `Accessories: ${style.accessories.join(", ")}` : ""}
+
+PHOTO REQUIREMENTS:
+- Head and upper shoulders, facing camera with slight angle
+- Real skin with pores, natural texture, subtle imperfections
+- Real hair with individual strands and natural shine  
+- Natural eye detail — iris patterns, catchlights, depth
+- Professional studio lighting — main light with fill, white background
+- Sharp focus on eyes, natural shallow depth of field
+- This must look like a casting headshot or magazine editorial photo
+- Absolutely indistinguishable from a real photograph
+- NO text, NO watermarks`;
+  }
+
+  return `Close-up portrait of a character — head and upper shoulders, facing slightly toward camera.
+
+ART STYLE: ${styleDesc}
+${style.colorPalette ? `COLOR PALETTE: ${style.colorPalette}` : ""}
+${style.mood ? `MOOD: ${style.mood}` : ""}
+
+CHARACTER:
+${buildIdentityDescription(identity)}
+
+OUTFIT (shoulders): ${style.outfit || "Modern clean outfit"}
+${style.accessories?.length ? `ACCESSORIES: ${style.accessories.join(", ")}` : ""}
 
 REQUIREMENTS:
-- Close-up portrait, head and upper shoulders only
-- PURE WHITE background (#FFFFFF)
-- Professional studio lighting, soft and even
-- Expressive eyes that convey personality and charisma
-- High detail, 4K quality
-- The portrait must clearly reflect ALL described facial features
-- Polished AI influencer look — appealing and professional
-- NO text, NO labels, NO watermarks
-${style.artStyle === "realistic" ? `
-PHOTOREALISM REQUIREMENTS (CRITICAL):
-- This must look like a REAL PHOTOGRAPH — not illustration, not 3D render
-- Real skin with pores and natural texture, NOT smooth CGI
-- Real hair with individual strands, natural lighting on hair
-- Professional fashion photography quality — think Vogue, GQ editorial
-- The viewer should NOT be able to tell this is AI-generated` : ""}`;
+- Close-up, head and shoulders
+- Pure white background
+- Expressive, high quality
+- NO text, NO watermarks`;
 }

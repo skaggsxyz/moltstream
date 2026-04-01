@@ -3,7 +3,7 @@
  * Generates turnaround sheet and portrait from character data
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, Part } from "@google/generative-ai";
 import type {
   GenerationRequest,
   GenerationResult,
@@ -11,6 +11,38 @@ import type {
 import { buildTurnaroundPrompt, buildPortraitPrompt } from "./prompts/index.js";
 
 const IMAGEN_MODEL = "gemini-2.5-flash-image";
+
+function buildImageParts(
+  request: GenerationRequest,
+  prompt: string
+): Part[] {
+  const parts: Part[] = [];
+
+  // For realistic style, include reference photos so Gemini can see the actual face
+  if (
+    request.styleConfig.artStyle === "realistic" &&
+    request.referencePhotos?.length
+  ) {
+    // Add reference photos first (max 3 to stay within limits)
+    const refs = request.referencePhotos.slice(0, 3);
+    for (const ref of refs) {
+      parts.push({
+        inlineData: {
+          data: ref.base64,
+          mimeType: ref.mimeType,
+        },
+      });
+    }
+    // Add instruction to use the photos as reference
+    parts.push({
+      text: `REFERENCE PHOTOS ABOVE: These are photos of the real person. The generated image must depict THIS EXACT PERSON — same face, same features, same likeness. Use these photos as the primary reference for the face.\n\n${prompt}`,
+    });
+  } else {
+    parts.push({ text: prompt });
+  }
+
+  return parts;
+}
 
 /**
  * Generate avatar images (turnaround sheet + portrait) from character data
@@ -28,14 +60,15 @@ export async function generateAvatar(
     },
   });
 
-  // --- Generate turnaround sheet (16:9) ---
+  // --- Generate turnaround sheet ---
   const turnaroundPrompt = buildTurnaroundPrompt(
     request.identityBlock,
     request.bodyBlock,
     request.styleConfig
   );
 
-  const turnaroundResult = await model.generateContent(turnaroundPrompt);
+  const turnaroundParts = buildImageParts(request, turnaroundPrompt);
+  const turnaroundResult = await model.generateContent(turnaroundParts);
   const turnaroundResponse = turnaroundResult.response;
 
   let turnaroundImageBase64 = "";
@@ -58,13 +91,14 @@ export async function generateAvatar(
     );
   }
 
-  // --- Generate portrait (3:4) ---
+  // --- Generate portrait ---
   const portraitPrompt = buildPortraitPrompt(
     request.identityBlock,
     request.styleConfig
   );
 
-  const portraitResult = await model.generateContent(portraitPrompt);
+  const portraitParts = buildImageParts(request, portraitPrompt);
+  const portraitResult = await model.generateContent(portraitParts);
   const portraitResponse = portraitResult.response;
 
   let portraitImageBase64 = "";

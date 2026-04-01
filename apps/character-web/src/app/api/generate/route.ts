@@ -58,12 +58,42 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", characterId);
 
+    // For realistic style, load original face photos as reference
+    let referencePhotos: Array<{ base64: string; mimeType: string }> | undefined;
+
+    if (styleConfig.artStyle === "realistic") {
+      const { data: photos } = await supabase
+        .from("character_photos")
+        .select("storage_path, type")
+        .eq("character_id", characterId)
+        .eq("type", "face")
+        .limit(3);
+
+      if (photos && photos.length > 0) {
+        referencePhotos = [];
+        for (const photo of photos) {
+          const { data: fileData } = await supabase.storage
+            .from("character-photos")
+            .download(photo.storage_path);
+
+          if (fileData) {
+            const buffer = Buffer.from(await fileData.arrayBuffer());
+            referencePhotos.push({
+              base64: buffer.toString("base64"),
+              mimeType: "image/jpeg",
+            });
+          }
+        }
+      }
+    }
+
     // Generate avatars
     const result = await generateAvatar(geminiKey, {
       characterId,
       identityBlock: character.identity_block as IdentityBlock,
       bodyBlock: (character.body_block as BodyBlock) || null,
       styleConfig,
+      referencePhotos,
     });
 
     // Upload turnaround sheet to storage

@@ -108,6 +108,8 @@ export interface GenerationRequest {
   identityBlock: IdentityBlock;
   bodyBlock: BodyBlock | null;
   styleConfig: StyleConfig;
+  /** Original face photos as base64 — used as reference for realistic style */
+  referencePhotos?: Array<{ base64: string; mimeType: string }>;
 }
 
 export interface GenerationResult {
