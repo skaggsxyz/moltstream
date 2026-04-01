@@ -10,9 +10,8 @@ import type {
 } from "./types.js";
 import { buildTurnaroundPrompt, buildPortraitPrompt } from "./prompts/index.js";
 
-// Model selection: nano-banana-pro for photorealistic, gemini-2.5-flash-image for stylized
-const REALISTIC_MODEL = "gemini-3-pro-image-preview";
-const STYLIZED_MODEL = "gemini-2.5-flash-image";
+// Gemini 3 Pro Image for all styles — best quality across the board
+const IMAGE_MODEL = "gemini-3-pro-image-preview";
 
 function buildImageParts(
   request: GenerationRequest,
@@ -54,9 +53,8 @@ export async function generateAvatar(
   request: GenerationRequest
 ): Promise<GenerationResult> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const selectedModel = request.styleConfig.artStyle === "realistic" ? REALISTIC_MODEL : STYLIZED_MODEL;
   const model = genAI.getGenerativeModel({
-    model: selectedModel,
+    model: IMAGE_MODEL,
     generationConfig: {
       // @ts-expect-error — responseModalities not yet in SDK types
       responseModalities: ["image", "text"],
