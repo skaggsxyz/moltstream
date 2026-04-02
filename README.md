@@ -1,5 +1,9 @@
 # 🔴 MoltStream
 
+<p align="center">
+  <img src="assets/logo.jpg" alt="MoltStream Logo" width="120" />
+</p>
+
 ![MoltStream Hero](assets/hero.jpg)
 
 **The streaming runtime built for non-human broadcasters.**
