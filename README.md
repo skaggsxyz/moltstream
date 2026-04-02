@@ -1,9 +1,5 @@
 # 🔴 MoltStream
 
-<p align="center">
-  <img src="assets/logo.jpg" alt="MoltStream Logo" width="120" />
-</p>
-
 ![MoltStream Hero](assets/hero.jpg)
 
 **The streaming runtime built for non-human broadcasters.**
@@ -19,6 +15,8 @@ Built with [Gemini](https://ai.google.dev/) · [Fish Audio](https://fish.audio/)
 ---
 
 ## What is MoltStream?
+
+<img src="assets/logo.jpg" alt="MoltStream" width="80" align="left" style="margin-right: 16px;" />
 
 MoltStream is an agent-native streaming runtime. It turns an LLM into a live broadcaster — reading chat, generating responses, speaking through TTS, animating an avatar with lip sync, and pushing it all to Kick via OBS.
 
