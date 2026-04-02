@@ -48,6 +48,17 @@ export class MoltAvatar {
       if (req.url === '/' || req.url === '/index.html') {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(this.generateAvatarHTML());
+      } else if (req.url === '/crab.jpg' || req.url === '/crab-blink.jpg') {
+        try {
+          const __dirname = dirname(fileURLToPath(import.meta.url));
+          const filePath = join(__dirname, '..', 'public', req.url.slice(1));
+          const data = await readFile(filePath);
+          res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+          res.end(data);
+        } catch {
+          res.writeHead(404);
+          res.end('Not Found');
+        }
       } else {
         res.writeHead(404);
         res.end('Not Found');
@@ -150,280 +161,284 @@ export class MoltAvatar {
 <meta charset="utf-8">
 <title>MoltStream Avatar</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #0a0a0a;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000000;
+    font-family: 'Press Start 2P', monospace;
     color: white;
+    image-rendering: pixelated;
   }
 
-  /* --- Layout --- */
   .stream-layout {
     display: grid;
-    grid-template-columns: 1fr 360px;
-    grid-template-rows: 1fr auto;
+    grid-template-columns: 1fr 340px;
     height: 100vh;
     gap: 0;
   }
 
-  /* --- Avatar area (left) --- */
+  /* --- Avatar + Bubble area (left) --- */
   .avatar-area {
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    background: radial-gradient(circle at 50% 40%, #1a1040 0%, #0a0a0a 70%);
-  }
-  #avatar {
-    width: 300px;
-    height: 450px;
-    position: relative;
-  }
-  .avatar-body {
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(ellipse at 50% 30%, #6366f1 0%, #4338ca 100%);
-    border-radius: 50% 50% 45% 45%;
-    position: relative;
-    animation: idle 3s ease-in-out infinite;
-    box-shadow: 0 0 60px rgba(99, 102, 241, 0.3);
-  }
-  .eyes {
-    position: absolute;
-    top: 30%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
     gap: 40px;
   }
-  .eye {
-    width: 24px;
-    height: 24px;
-    background: white;
-    border-radius: 50%;
+
+  /* Crab container */
+  .crab-wrap {
     position: relative;
-    animation: blink 4s ease-in-out infinite;
+    width: 400px;
+    height: 400px;
+    animation: idle 2.5s ease-in-out infinite;
   }
-  .eye::after {
-    content: '';
-    width: 12px;
-    height: 12px;
-    background: #1e1b4b;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .crab-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
   }
-  .mouth {
-    position: absolute;
-    top: 55%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 30px;
-    height: 4px;
-    background: #1e1b4b;
-    border-radius: 10px;
-    transition: height 0.05s ease, width 0.05s ease, border-radius 0.05s ease;
-  }
-  .mouth.open {
-    height: 20px;
-    width: 25px;
-    border-radius: 50%;
-  }
+  .crab-open { display: block; }
+  .crab-blink { display: none; position: absolute; top: 0; left: 0; }
+
+  /* Blink animation via JS — swap images */
+  .crab-wrap.blinking .crab-open { display: none; }
+  .crab-wrap.blinking .crab-blink { display: block; }
+
   @keyframes idle {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-  @keyframes blink {
-    0%, 45%, 55%, 100% { transform: scaleY(1); }
-    50% { transform: scaleY(0.1); }
+    50% { transform: translateY(-8px); }
   }
 
-  /* --- Response bubble (below avatar) --- */
-  .response-area {
-    grid-column: 1;
-    padding: 16px 24px;
+  /* --- Pixel speech bubble --- */
+  .pixel-bubble {
+    position: relative;
+    max-width: 380px;
+    min-width: 200px;
     min-height: 80px;
-    max-height: 120px;
-    display: flex;
-    align-items: center;
-    background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.1) 100%);
-    border-top: 1px solid rgba(99, 102, 241, 0.2);
-  }
-  .response-bubble {
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-size: 16px;
-    line-height: 1.4;
-    color: #e0e7ff;
-    width: 100%;
+    background: #000;
+    border: 4px solid #FF2020;
+    padding: 16px 20px;
+    image-rendering: pixelated;
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s, transform 0.3s;
-    max-height: 90px;
-    overflow: hidden;
+    transform: scale(0.9);
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: 
+      8px 0 0 0 #FF2020,
+      -8px 0 0 0 #FF2020,
+      0 8px 0 0 #FF2020,
+      0 -8px 0 0 #FF2020;
   }
-  .response-bubble.visible {
+  .pixel-bubble.visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
-  .response-bubble .label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #818cf8;
+  /* Pixel tail pointing left */
+  .pixel-bubble::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 30px;
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+    border-right-color: #FF2020;
+  }
+  .pixel-bubble::after {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 34px;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-right-color: #000;
+  }
+  .pixel-bubble .label {
+    font-size: 8px;
+    color: #FF2020;
+    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 4px;
+  }
+  .pixel-bubble .text {
+    font-size: 10px;
+    line-height: 1.8;
+    color: #fff;
+    word-wrap: break-word;
+  }
+
+  /* Typing cursor */
+  .typing-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 12px;
+    background: #FF2020;
+    animation: cursorBlink 0.6s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+  @keyframes cursorBlink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
   }
 
   /* --- Chat panel (right) --- */
   .chat-panel {
-    grid-row: 1 / 3;
-    grid-column: 2;
-    background: rgba(15, 15, 20, 0.95);
-    border-left: 1px solid rgba(255,255,255,0.08);
+    background: #0B0F14;
+    border-left: 2px solid #FF2020;
     display: flex;
     flex-direction: column;
   }
   .chat-header {
-    padding: 14px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.5);
+    padding: 14px 16px;
+    font-size: 9px;
+    color: #FF2020;
     text-transform: uppercase;
     letter-spacing: 2px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 2px solid rgba(255,32,32,0.3);
   }
   .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 14px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
   .chat-messages::-webkit-scrollbar { width: 4px; }
-  .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: #FF2020; }
 
   .chat-msg {
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.3;
-    animation: chatIn 0.3s ease-out;
-    background: rgba(255,255,255,0.04);
+    padding: 8px 10px;
+    font-size: 9px;
+    line-height: 1.6;
+    animation: chatIn 0.2s ease-out;
+    border-left: 2px solid transparent;
   }
   .chat-msg .user {
-    font-weight: 700;
-    margin-right: 6px;
+    margin-right: 4px;
   }
-  .chat-msg.viewer .user { color: #22c55e; }
-  .chat-msg.bot {
-    background: rgba(99, 102, 241, 0.12);
-    border-left: 3px solid #6366f1;
+  .chat-msg.viewer { border-left-color: #00FFFF; }
+  .chat-msg.viewer .user { color: #00FFFF; }
+  .chat-msg.bot { 
+    border-left-color: #FF2020;
+    background: rgba(255,32,32,0.08);
   }
-  .chat-msg.bot .user { color: #818cf8; }
-  .chat-msg .text { color: rgba(255,255,255,0.85); }
+  .chat-msg.bot .user { color: #FF2020; }
+  .chat-msg .text { color: rgba(255,255,255,0.75); }
 
   @keyframes chatIn {
-    from { opacity: 0; transform: translateX(10px); }
+    from { opacity: 0; transform: translateX(8px); }
     to { opacity: 1; transform: translateX(0); }
   }
 
   /* --- LIVE badge --- */
   .live-badge {
     position: fixed;
-    top: 16px;
-    left: 16px;
-    background: #ef4444;
-    color: white;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 4px 12px;
-    border-radius: 4px;
+    top: 12px;
+    left: 12px;
+    background: #FF2020;
+    color: #000;
+    font-size: 8px;
+    font-family: 'Press Start 2P', monospace;
+    padding: 6px 12px;
     letter-spacing: 2px;
-    animation: livePulse 2s ease-in-out infinite;
+    animation: livePulse 1.5s step-end infinite;
     z-index: 100;
+    border: 2px solid #fff;
   }
   @keyframes livePulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%, 60% { opacity: 1; }
+    61%, 100% { opacity: 0.4; }
   }
 
-  /* --- Agent name --- */
-  .agent-name {
-    position: absolute;
-    bottom: -40px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 18px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.7);
-    letter-spacing: 3px;
-    text-transform: uppercase;
+  /* Scanlines */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+    );
   }
 </style>
 </head>
 <body>
+  <div class="scanlines"></div>
   <div class="live-badge">● LIVE</div>
 
   <div class="stream-layout">
     <div class="avatar-area">
-      <div id="avatar">
-        <div class="avatar-body">
-          <div class="eyes">
-            <div class="eye"></div>
-            <div class="eye"></div>
-          </div>
-          <div class="mouth" id="mouth"></div>
-        </div>
-        <div class="agent-name">MoltBot</div>
+      <div class="crab-wrap" id="crab">
+        <img class="crab-open" src="/crab.jpg" alt="crab" />
+        <img class="crab-blink" src="/crab-blink.jpg" alt="crab blink" />
       </div>
-    </div>
 
-    <div class="response-area">
-      <div class="response-bubble" id="response">
-        <div class="label">🤖 MoltBot</div>
-        <div class="response-text" id="responseText"></div>
+      <div class="pixel-bubble" id="bubble">
+        <div class="label">MOLTBOT &gt;</div>
+        <div class="text" id="bubbleText"></div>
       </div>
     </div>
 
     <div class="chat-panel">
-      <div class="chat-header">💬 Live Chat</div>
+      <div class="chat-header">// LIVE_CHAT</div>
       <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
 
   <script>
-    const mouth = document.getElementById('mouth');
+    const crab = document.getElementById('crab');
     const chatMessages = document.getElementById('chatMessages');
-    const responseBubble = document.getElementById('response');
-    const responseText = document.getElementById('responseText');
+    const bubble = document.getElementById('bubble');
+    const bubbleText = document.getElementById('bubbleText');
     let ws;
     let responseTimeout;
+    let blinkInterval;
+
+    // --- Blink ---
+    function startBlink() {
+      blinkInterval = setInterval(() => {
+        crab.classList.add('blinking');
+        setTimeout(() => crab.classList.remove('blinking'), 150);
+      }, 3000 + Math.random() * 2000);
+    }
+    startBlink();
 
     function addChatMessage(username, message, isBot) {
       const el = document.createElement('div');
       el.className = 'chat-msg ' + (isBot ? 'bot' : 'viewer');
-      el.innerHTML = '<span class="user">' + escapeHtml(username) + '</span><span class="text">' + escapeHtml(message) + '</span>';
+      el.innerHTML = '<span class="user">' + escapeHtml(username) + ':</span> <span class="text">' + escapeHtml(message) + '</span>';
       chatMessages.appendChild(el);
-      // Keep max 50 messages
       while (chatMessages.children.length > 50) chatMessages.removeChild(chatMessages.firstChild);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function showResponse(text) {
-      responseText.textContent = text;
-      responseBubble.classList.add('visible');
+      // Typewriter effect
+      bubble.classList.add('visible');
+      bubbleText.innerHTML = '';
+      let i = 0;
+      const cursor = '<span class="typing-cursor"></span>';
+      const type = () => {
+        if (i < text.length) {
+          bubbleText.innerHTML = escapeHtml(text.slice(0, i + 1)) + cursor;
+          i++;
+          setTimeout(type, 30 + Math.random() * 20);
+        } else {
+          bubbleText.innerHTML = escapeHtml(text);
+        }
+      };
+      type();
+
       clearTimeout(responseTimeout);
       responseTimeout = setTimeout(() => {
-        responseBubble.classList.remove('visible');
+        bubble.classList.remove('visible');
       }, 15000);
     }
 
@@ -433,45 +448,23 @@ export class MoltAvatar {
 
     function connect() {
       ws = new WebSocket('ws://' + location.host);
-
-      ws.onopen = () => {};
-
       ws.onmessage = (e) => {
         const data = JSON.parse(e.data);
-
-        if (data.type === 'mouth') {
-          const v = data.value;
-          if (v > 0.1) {
-            mouth.classList.add('open');
-            mouth.style.height = (4 + v * 20) + 'px';
-            mouth.style.width = (20 + v * 10) + 'px';
-          } else {
-            mouth.classList.remove('open');
-            mouth.style.height = '4px';
-            mouth.style.width = '30px';
-          }
-        }
 
         if (data.type === 'chat') {
           addChatMessage(data.username, data.message, false);
         }
-
         if (data.type === 'response') {
-          addChatMessage('MoltBot', data.text, true);
+          addChatMessage('MOLTBOT', data.text, true);
           showResponse(data.text);
         }
-
         if (data.type === 'audio') {
           const audio = new Audio('data:' + data.mime + ';base64,' + data.data);
           audio.play().catch(() => {});
         }
       };
-
-      ws.onclose = () => {
-        setTimeout(connect, 2000);
-      };
+      ws.onclose = () => setTimeout(connect, 2000);
     }
-
     connect();
   </script>
 </body>
