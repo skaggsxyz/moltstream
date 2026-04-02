@@ -1,32 +1,37 @@
 # MoltStream — llms.txt
-# Agent-native streaming runtime
+# The streaming runtime built for non-human broadcasters.
 
-> MoltStream is an API-first streaming runtime where the broadcaster is a program.
-> No GUI. No mouse. No human in the loop (unless you want one).
+> MoltStream is an agent-native streaming runtime. It turns an LLM into a live
+> broadcaster — reading chat, generating responses, speaking through TTS, animating
+> an avatar with lip sync, and pushing it all to Kick via OBS. One command to go live.
 
 ## What this is
-A TypeScript monorepo providing infrastructure for AI agents to operate live streams.
-Agents control scenes, react to chat, manage overlays, and make real-time decisions —
-all through a typed SDK, not a GUI.
+A TypeScript monorepo providing infrastructure for AI agents to operate live streams
+on Kick. Agents react to chat, generate voiced responses, animate avatars, and broadcast
+in real-time — all through a typed SDK, not a GUI.
 
 ## Quick start
 ```
-npm install -g @moltstream/cli
-molt init my-agent
-cd my-agent
-molt dev
+npx moltstream init    # configure your agent
+npx moltstream start   # go live on Kick
 ```
 
 ## Packages
-- @moltstream/core — Agent runtime, WebSocket sessions, lifecycle, state, memory, telemetry
+- @moltstream/core — Agent runtime, state management, memory, event bus, telemetry
 - @moltstream/orchestrator — Scene graph engine, event queue, deterministic execution
-- @moltstream/adapters — Platform adapters (Twitch, YouTube, Kick)
+- @moltstream/kick-chat — Kick chatroom WebSocket client
+- @moltstream/streamer — Core pipeline orchestrator (chat → LLM → TTS → avatar)
+- @moltstream/tts — Text-to-speech (Fish Audio / ElevenLabs / OpenAI)
+- @moltstream/avatar — Animated avatar with lip sync + chat overlay
+- @moltstream/broadcast — FFmpeg RTMP broadcast (experimental)
+- @moltstream/adapters — Platform adapters (Kick)
 - @moltstream/bridge — Action serialization, priority queuing, rollback
 - @moltstream/policy — Content filtering, permissions, emergency stop
 - @moltstream/audit — Reasoning traces, decision logs, performance metrics
-- @moltstream/cli — CLI tooling (molt init, molt dev, molt stream)
 - @moltstream/narrative — Real-time narrative detection engine
 - @moltstream/container — Docker-based agent isolation runtime
+- @moltstream/cli — CLI tooling (init, start, status)
+- @moltstream/character-creator — AI character generation via Gemini
 
 ## Key concepts
 - Scene Graph: Declarative composition of video layers, overlays, audio
@@ -34,19 +39,20 @@ molt dev
 - Policy Engine: Guardrails that intercept unsafe actions before they reach the platform
 - Audit Trail: Every agent decision logged as structured trace with confidence scores
 - Memory: Persistent vector-search memory across sessions
-- Adapters: Write once, stream to Twitch/YouTube/Kick with zero platform-specific code
 
 ## Architecture
-Agent Core → Orchestrator → Platform Adapter
-     ↕            ↕              ↕
-Action Bridge  Policy Engine  Audit Logger
+```
+Kick Chat (WS) → LLM (Gemini) → TTS (Fish Audio) → Avatar (lip sync)
+                                                          │
+                                                    OBS → Kick RTMP
+```
 
-## API patterns
-- All APIs are TypeScript-first with full type definitions
-- Events follow a typed pub/sub pattern (onAudienceEvent, onSceneChange, etc.)
-- Errors are typed with error codes, retryable flags, and recovery suggestions
-- Rate limiting uses token bucket + sliding window with Retry-After semantics
-- WebSocket protocol uses typed frames with codec negotiation
+## Pipeline
+1. Chat ingestion — Kick WebSocket connects to chatroom
+2. LLM reasoning — Messages sent to Gemini 2.5 Flash (or Claude)
+3. Voice synthesis — Response converted to speech
+4. Avatar rendering — Browser-based avatar animates lip sync
+5. Broadcast — OBS captures Browser Source, streams to Kick
 
 ## Documentation
 - Getting started: docs/getting-started.md
@@ -58,11 +64,11 @@ Action Bridge  Policy Engine  Audit Logger
 ## Links
 - Website: https://moltstream.app
 - GitHub: https://github.com/skaggsxyz/moltstream
-- Architecture: https://moltstream.app/framework
+- npm: https://www.npmjs.com/package/moltstream
 
 ## Agent notes
-- Context cost: ~400 tokens for this file
-- Time-to-first-action: < 3 minutes with CLI
+- Context cost: ~500 tokens for this file
+- Time-to-first-stream: < 3 minutes with CLI
 - All errors include typed codes + recovery guidance
 - Works with models down to 8K context window
 - No browser-only auth — all programmatic
