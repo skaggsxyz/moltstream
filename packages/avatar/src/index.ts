@@ -14,7 +14,7 @@ import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+
 
 export interface AvatarConfig {
   /** Port for the avatar HTTP server */
@@ -50,8 +50,7 @@ export class MoltAvatar {
         res.end(this.generateAvatarHTML());
       } else if (req.url === '/crab.jpg' || req.url === '/crab-blink.jpg') {
         try {
-          const __dirname = dirname(fileURLToPath(import.meta.url));
-          const filePath = join(__dirname, '..', 'public', req.url.slice(1));
+          const filePath = join(__dirname, '..', 'public', req.url!.slice(1));
           const data = await readFile(filePath);
           res.writeHead(200, { 'Content-Type': 'image/jpeg' });
           res.end(data);

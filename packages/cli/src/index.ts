@@ -185,6 +185,7 @@ program
 
     const streamer = new MoltStreamer({
       channel: config.platform.channel,
+      chatroomId: Number(config.platform?.chatroomId || process.env.KICK_CHATROOM_ID || 0),
       llmProvider: (config.llm?.provider || 'gemini') as 'gemini' | 'anthropic',
       apiKey: config.llm.apiKey,
       kickAuthToken: config.platform?.authToken,
