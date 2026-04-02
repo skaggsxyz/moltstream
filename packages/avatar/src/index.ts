@@ -191,8 +191,8 @@ export class MoltAvatar {
   /* Crab container */
   .crab-wrap {
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 800px;
+    height: 800px;
     animation: idle 2.5s ease-in-out infinite;
   }
   .crab-wrap img {
@@ -216,12 +216,12 @@ export class MoltAvatar {
   /* --- Pixel speech bubble --- */
   .pixel-bubble {
     position: relative;
-    max-width: 380px;
-    min-width: 200px;
-    min-height: 80px;
+    max-width: 500px;
+    min-width: 280px;
+    min-height: 100px;
     background: #000;
     border: 4px solid #FF2020;
-    padding: 16px 20px;
+    padding: 20px 24px;
     image-rendering: pixelated;
     opacity: 0;
     transform: scale(0.9);
@@ -258,15 +258,15 @@ export class MoltAvatar {
     border-right-color: #000;
   }
   .pixel-bubble .label {
-    font-size: 8px;
+    font-size: 14px;
     color: #FF2020;
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
   .pixel-bubble .text {
-    font-size: 10px;
-    line-height: 1.8;
+    font-size: 18px;
+    line-height: 1.6;
     color: #fff;
     word-wrap: break-word;
   }
@@ -274,8 +274,8 @@ export class MoltAvatar {
   /* Typing cursor */
   .typing-cursor {
     display: inline-block;
-    width: 8px;
-    height: 12px;
+    width: 12px;
+    height: 18px;
     background: #FF2020;
     animation: cursorBlink 0.6s step-end infinite;
     vertical-align: middle;
@@ -294,8 +294,8 @@ export class MoltAvatar {
     flex-direction: column;
   }
   .chat-header {
-    padding: 14px 16px;
-    font-size: 9px;
+    padding: 16px 18px;
+    font-size: 14px;
     color: #FF2020;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -313,9 +313,9 @@ export class MoltAvatar {
   .chat-messages::-webkit-scrollbar-thumb { background: #FF2020; }
 
   .chat-msg {
-    padding: 8px 10px;
-    font-size: 9px;
-    line-height: 1.6;
+    padding: 10px 12px;
+    font-size: 16px;
+    line-height: 1.5;
     animation: chatIn 0.2s ease-out;
     border-left: 2px solid transparent;
   }
@@ -343,9 +343,9 @@ export class MoltAvatar {
     left: 12px;
     background: #FF2020;
     color: #000;
-    font-size: 8px;
+    font-size: 14px;
     font-family: 'Press Start 2P', monospace;
-    padding: 6px 12px;
+    padding: 8px 16px;
     letter-spacing: 2px;
     animation: livePulse 1.5s step-end infinite;
     z-index: 100;
