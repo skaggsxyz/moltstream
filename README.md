@@ -1,5 +1,7 @@
 # 🔴 MoltStream
 
+![MoltStream Hero](assets/hero.jpg)
+
 **The streaming runtime built for non-human broadcasters.**
 
 Deploy autonomous AI streamers on Kick with one command. No OBS manual setup, no bot scripts, no duct tape.
@@ -7,6 +9,8 @@ Deploy autonomous AI streamers on Kick with one command. No OBS manual setup, no
 [![npm version](https://img.shields.io/npm/v/moltstream)](https://www.npmjs.com/package/moltstream)
 [![CI](https://github.com/skaggsxyz/moltstream/actions/workflows/ci.yml/badge.svg)](https://github.com/skaggsxyz/moltstream/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Built with [Gemini](https://ai.google.dev/) · [Fish Audio](https://fish.audio/) · [Kick](https://kick.com/) · [OBS](https://obsproject.com/) · [Turborepo](https://turbo.build/)
 
 ---
 
@@ -17,6 +21,24 @@ MoltStream is an agent-native streaming runtime. It turns an LLM into a live bro
 **Without MoltStream:** a week of manual setup — OBS scenes, chat bots, TTS wiring, avatar rendering, deployment scripts.
 
 **With MoltStream:** `npx moltstream start`. 30 seconds.
+
+### What it looks like
+
+> 💬 **Viewer:** "yo what do you think about rust vs go?"
+>
+> 🧠 **Agent thinks:** _compares languages, considers chat context, picks a hot take_
+>
+> 🔊 **Agent speaks:** "Rust if you hate yourself, Go if you hate your coworkers. Next question."
+>
+> 🎭 **Avatar:** _lip syncs the response, chat overlay updates in real-time_
+
+> 💬 **Viewer:** "play something chill"
+>
+> 🧠 **Agent thinks:** _interprets mood request, selects response_
+>
+> 🔊 **Agent speaks:** "I don't have Spotify access yet, but I can vibe verbally. Here's my impression of lo-fi beats: bmmm tss bmmm tss..."
+>
+> 💬 **Chat:** _explodes_
 
 ---
 
@@ -40,6 +62,8 @@ Your AI agent is now streaming on Kick with:
 ---
 
 ## How It Works
+
+![Architecture](assets/architecture.jpg)
 
 ```
 Kick Chat (WebSocket)
@@ -68,13 +92,25 @@ Kick Chat (WebSocket)
                   OBS → Kick RTMP
 ```
 
-**Pipeline:**
+### Pipeline
 
-1. **Chat ingestion** — Kick WebSocket connects to your channel's chatroom
-2. **LLM reasoning** — Messages are sent to Gemini (or Claude) for response generation
-3. **Voice synthesis** — Response text is converted to speech via Fish Audio / ElevenLabs / OpenAI
-4. **Avatar rendering** — Browser-based avatar animates lip sync to audio, displays chat overlay
-5. **Broadcast** — OBS captures the avatar Browser Source and streams to Kick via RTMP
+1. **Chat ingestion** — Kick WebSocket connects to your channel's chatroom, receives messages in real-time
+2. **LLM reasoning** — Messages are sent to Gemini 2.5 Flash (or Claude) for response generation with full chat context
+3. **Voice synthesis** — Response text is converted to speech via Fish Audio / ElevenLabs / OpenAI TTS
+4. **Avatar rendering** — Browser-based avatar animates lip sync to the audio stream, displays live chat overlay
+5. **Broadcast** — OBS captures the avatar page as a Browser Source and streams to Kick via RTMPS
+
+### Technical Details
+
+| Component | Spec |
+|-----------|------|
+| Chat protocol | Kick WebSocket (persistent connection, auto-reconnect) |
+| LLM | Gemini 2.5 Flash (default), Anthropic Claude (optional) |
+| TTS audio | PCM 16-bit, 24kHz mono — streamed to avatar |
+| Avatar | Browser-based (localhost:3939), renders at 30fps |
+| Lip sync | Amplitude-based mouth animation synced to TTS audio chunks |
+| Broadcast | RTMPS via OBS Browser Source capture |
+| Latency | Chat → voice response: ~2-4s (LLM + TTS) |
 
 ---
 
@@ -195,14 +231,15 @@ npx moltstream start
 
 1. Install OBS: `brew install --cask obs`
 2. Add **Browser Source** → `http://localhost:3939`
-3. Enable "Control audio via OBS" in Browser Source settings
-4. Set Stream → Custom → your Kick RTMP URL + stream key
-5. Start Streaming
+3. Set resolution to **1920×1080**
+4. Enable "Control audio via OBS" in Browser Source settings
+5. Set Stream → Custom → your Kick RTMP URL + stream key
+6. Start Streaming
 
 The avatar page renders:
 - Animated character with real-time lip sync
-- Live chat panel (viewer messages)
-- Bot response bubble
+- Live chat panel (viewer messages + bot responses)
+- Bot response bubble with typing indicator
 - LIVE badge
 
 ---
@@ -240,7 +277,7 @@ See more in [`examples/`](examples/).
 - **OBS Studio** 28+ (for streaming to Kick)
 - **Gemini API key** ([get one free](https://aistudio.google.com/apikey)) or Anthropic API key
 - **Kick account** with stream key
-- **TTS API key** — Fish Audio, ElevenLabs, or OpenAI
+- **TTS API key** — [Fish Audio](https://fish.audio/) (recommended), [ElevenLabs](https://elevenlabs.io/), or [OpenAI](https://platform.openai.com/)
 
 ---
 
@@ -271,6 +308,8 @@ pnpm run test
 | TTS silent / no audio | Check your TTS API key and provider setting in `moltstream.yaml` |
 | FFmpeg broadcast fails on macOS | Known macOS lavfi pacing issue — use OBS instead of FFmpeg direct |
 | LLM not responding | Verify `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` is set and valid |
+| OBS WebSocket not connecting | Enable WebSocket Server in OBS → Tools → WebSocket Server Settings |
+| Avatar lip sync out of sync | Ensure TTS provider returns audio chunks, not full-file responses |
 
 ---
 
@@ -296,5 +335,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and guidelines.
 
 ---
 
-**Website:** [moltstream.app](https://moltstream.app)
-**npm:** [npmjs.com/package/moltstream](https://www.npmjs.com/package/moltstream)
+**Website:** [moltstream.app](https://moltstream.app) · **npm:** [npmjs.com/package/moltstream](https://www.npmjs.com/package/moltstream)
