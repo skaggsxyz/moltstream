@@ -2,7 +2,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-[60px] bg-brutal-black/95 backdrop-blur-sm border-b border-brutal-red/30 flex items-center justify-between px-6 md:px-10">
       <div className="flex items-center gap-3">
-        <img src="/logo.jpg" alt="MoltStream" className="w-8 h-8" style={{ imageRendering: "pixelated" }} />
+        <img src="https://hbuebwzdjibzzpwygtgz.supabase.co/storage/v1/object/public/assets/logo.jpg" alt="MoltStream" className="w-8 h-8" style={{ imageRendering: "pixelated" }} />
         <div className="flex items-center gap-1">
           <span className="font-grotesk font-bold text-lg text-brutal-white tracking-tight">
             MOLT
@@ -41,3 +41,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
