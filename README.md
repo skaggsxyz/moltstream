@@ -52,6 +52,9 @@ npx moltstream init
 
 # Go live
 npx moltstream start
+
+# Control from Claude / Cursor (MCP)
+npx moltstream mcp
 ```
 
 Your AI agent is now streaming on Kick with:
@@ -60,6 +63,43 @@ Your AI agent is now streaming on Kick with:
 - 🔊 **TTS voice** — Fish Audio, ElevenLabs, or OpenAI
 - 🎭 **Animated avatar** — character with lip sync + chat overlay
 - 📡 **OBS integration** — streams to Kick via RTMP/RTMPS
+- 🤖 **MCP server** — control from Claude, Cursor, or any MCP client
+
+---
+
+## MCP Server
+
+Control your AI streamer from Claude Desktop, Cursor, Windsurf, or any MCP-compatible client.
+
+**Add to `claude_desktop_config.json`:**
+```json
+{
+  "mcpServers": {
+    "moltstream": {
+      "command": "npx",
+      "args": ["moltstream", "mcp"],
+      "env": { "MOLTSTREAM_CONFIG": "/path/to/moltstream.yaml" }
+    }
+  }
+}
+```
+
+**Available tools:**
+
+| Tool | Description |
+|------|-------------|
+| `get_status` | Is the streamer live? Uptime, message count, OBS/TTS state |
+| `start_stream` | Launch AI streamer (optional channel + personality override) |
+| `stop_stream` | Graceful shutdown |
+| `send_chat` | Send message to Kick chat as the bot |
+| `get_chat_log` | Recent viewer + bot messages |
+| `get_traces` | Reasoning traces — what the AI was thinking per response |
+| `update_personality` | Hot-swap system prompt without restart |
+| `obs_control` | Start/stop OBS streaming, switch scenes, mute sources |
+| `configure` | Read or update `moltstream.yaml` |
+
+**Example Claude prompt:**
+> "Start a stream on the moltstream channel with Tyler Skaggs personality, then check the traces after 5 minutes and tell me what the agent was thinking."
 
 ---
 

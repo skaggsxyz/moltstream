@@ -1,0 +1,27 @@
+{
+  "name": "@moltstream/mcp",
+  "version": "0.1.0",
+  "description": "MoltStream MCP server — control your AI streamer from Claude, Cursor, or any MCP client",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "moltstream-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@moltstream/streamer": "workspace:*",
+    "yaml": "^2.4.0",
+    "undici": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "license": "MIT"
+}

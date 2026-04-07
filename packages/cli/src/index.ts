@@ -319,6 +319,28 @@ program
     console.log('');
   });
 
+// ─── MCP ───
+
+program
+  .command('mcp')
+  .description('Start MoltStream MCP server (stdio) — connect Claude, Cursor, or any MCP client')
+  .option('-c, --config <path>', 'Path to moltstream.yaml', CONFIG_FILE)
+  .action(async (opts: { config: string }) => {
+    process.env.MOLTSTREAM_CONFIG = join(process.cwd(), opts.config);
+    // Dynamically import and run the MCP server
+    try {
+      await import('@moltstream/mcp');
+    } catch (err: any) {
+      if (err.code === 'MODULE_NOT_FOUND') {
+        console.error('\n  ✗ @moltstream/mcp not installed.');
+        console.error('  Run: npm install @moltstream/mcp\n');
+      } else {
+        console.error('  ✗ MCP error:', err.message);
+      }
+      process.exit(1);
+    }
+  });
+
 program.parse();
 
 // ─── OBS WebSocket auto-setup ───

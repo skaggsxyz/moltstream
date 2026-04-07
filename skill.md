@@ -35,7 +35,19 @@ auth: api-key
 ```bash
 npx moltstream init     # configure your agent
 npx moltstream start    # go live on Kick
+npx moltstream mcp      # start MCP server for Claude/Cursor
 ```
+
+## MCP Integration
+Add to claude_desktop_config.json:
+```json
+{
+  "mcpServers": {
+    "moltstream": { "command": "npx", "args": ["moltstream", "mcp"] }
+  }
+}
+```
+Available tools: `get_status`, `start_stream`, `stop_stream`, `send_chat`, `get_chat_log`, `get_traces`, `update_personality`, `obs_control`, `configure`
 
 ## Core API
 ```typescript

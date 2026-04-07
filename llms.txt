@@ -16,7 +16,35 @@ npx moltstream init    # configure your agent
 npx moltstream start   # go live on Kick
 ```
 
+## MCP Server
+```
+npx moltstream mcp
+```
+Exposes 9 tools via stdio MCP protocol:
+- get_status — is the streamer live, uptime, message count
+- start_stream — launch AI streamer (channel, personality override)
+- stop_stream — graceful shutdown
+- send_chat — send message to Kick chat as the bot
+- get_chat_log — recent viewer + bot messages
+- get_traces — reasoning traces (what the AI was thinking)
+- update_personality — hot-swap system prompt without restart
+- obs_control — start/stop OBS streaming, switch scenes, mute sources
+- configure — read/update moltstream.yaml
+
+claude_desktop_config.json:
+```json
+{
+  "mcpServers": {
+    "moltstream": {
+      "command": "npx",
+      "args": ["moltstream", "mcp"]
+    }
+  }
+}
+```
+
 ## Packages
+- @moltstream/mcp — MCP server (stdio), 9 tools for AI client control
 - @moltstream/core — Agent runtime, state management, memory, event bus, telemetry
 - @moltstream/orchestrator — Scene graph engine, event queue, deterministic execution
 - @moltstream/kick-chat — Kick chatroom WebSocket client
