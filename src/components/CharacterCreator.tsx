@@ -251,8 +251,10 @@ export default function CharacterCreator() {
         }
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setStep("personality");
+      // Even on error — stay on DONE slide so user sees next steps (MCP CTA)
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      setStep("done");
     } finally { setLoading(false); }
   };
 
@@ -483,6 +485,8 @@ export default function CharacterCreator() {
               <p className="label-mono-red text-xs">{"// AVATAR_READY"}</p>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-5">
+
+              {/* Avatar images or placeholder */}
               {resultImages.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   {resultImages.map((url, i) => (
@@ -494,15 +498,50 @@ export default function CharacterCreator() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-48 mb-5">
+                <div className="flex flex-col items-center justify-center py-6 mb-4 border border-brutal-red/20 bg-brutal-red/5">
                   <span className="text-4xl mb-3">🎭</span>
-                  <p className="font-grotesk font-bold text-lg uppercase">Avatar Generated!</p>
-                  <a href={`/create/result?id=${characterId}`} className="mt-2 label-mono-red text-sm hover:opacity-80 transition-opacity">VIEW FULL RESULT →</a>
+                  <p className="font-grotesk font-bold text-lg uppercase text-brutal-white">Avatar Generated!</p>
+                  <p className="body-text text-xs mt-1 text-brutal-white/40">Your streamer is ready to go live</p>
                 </div>
               )}
-              <div className="flex justify-center">
-                <button onClick={handleReset} className="border border-brutal-white/20 font-mono uppercase text-xs tracking-widest px-6 py-3 hover:border-brutal-white/40 transition-colors">CREATE ANOTHER</button>
+
+              {/* ─── MCP CTA ─── */}
+              <div className="border border-[#00FFFF]/30 bg-[#00FFFF]/5 p-4 mb-4">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-[#00FFFF] mb-2">// NEXT STEP</p>
+                <p className="font-grotesk font-bold text-sm text-brutal-white uppercase mb-1">Deploy your agent via MCP</p>
+                <p className="body-text text-xs mb-3 text-brutal-white/60">Connect to Claude or Cursor — one command starts your AI streamer on Kick.</p>
+                <div className="bg-brutal-black border border-brutal-red/30 px-3 py-2 font-mono text-[11px] text-brutal-white/70 mb-3">
+                  <span className="text-brutal-red mr-2">$</span>npx moltstream mcp
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href="https://github.com/skaggsxyz/moltstream#mcp-server"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-widest border border-[#00FFFF]/40 text-[#00FFFF] py-2 hover:bg-[#00FFFF]/10 transition-colors"
+                  >
+                    <span>MCP DOCS</span>
+                    <span className="opacity-60">↗</span>
+                  </a>
+                  <a
+                    href="https://github.com/skaggsxyz/moltstream"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-widest bg-brutal-red text-brutal-white py-2 hover:bg-brutal-red/80 transition-colors"
+                  >
+                    <span>GITHUB</span>
+                    <span className="opacity-80">↗</span>
+                  </a>
+                </div>
               </div>
+
+              {/* Reset */}
+              <div className="flex justify-center">
+                <button onClick={handleReset} className="border border-brutal-white/20 font-mono uppercase text-xs tracking-widest px-6 py-3 hover:border-brutal-white/40 transition-colors text-brutal-white/50 hover:text-brutal-white/80">
+                  CREATE ANOTHER
+                </button>
+              </div>
+
             </div>
           </div>
 
@@ -515,3 +554,4 @@ export default function CharacterCreator() {
     </section>
   );
 }
+
