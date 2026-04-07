@@ -1,0 +1,270 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════
+   MOLTSTREAM — BRUTAL EDITORIAL CYBERPUNK
+   ══════════════════════════════════════════════ */
+
+:root {
+  --brutal-black: #0B0F14;
+  --brutal-red: #FF2020;
+  --brutal-cyan: #00FFFF;
+  --brutal-white: #FFFFFF;
+  --grid-size: 120px;
+  --cross-size: 12px;
+  --dot-size: 3px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--brutal-black);
+  color: var(--brutal-white);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  /* Subtle vignette like Utopia Tokyo */
+  background-image: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+  background-attachment: fixed;
+}
+
+/* Grid Overlay — crosshairs + center dots (matches Utopia Tokyo exactly) */
+#grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#grid-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Main grid lines — thin, dim red */
+  background-image:
+    linear-gradient(rgba(255, 32, 32, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 32, 32, 0.18) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+#grid-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Crosshair glow at intersections (center dots now handled by canvas) */
+  background-image:
+    /* Horizontal crosshair arms at intersections */
+    radial-gradient(ellipse var(--cross-size) 1px at center, rgba(255, 32, 32, 0.7) 0%, transparent 100%),
+    /* Vertical crosshair arms at intersections */
+    radial-gradient(ellipse 1px var(--cross-size) at center, rgba(255, 32, 32, 0.7) 0%, transparent 100%),
+    /* Glow at intersections */
+    radial-gradient(circle 4px at center, rgba(255, 32, 32, 0.5) 0%, transparent 100%);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size);
+  background-position:
+    0 0,
+    0 0,
+    0 0;
+}
+
+/* Scanline Overlay */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.04) 3px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+}
+
+/* Main content sits above grid */
+main, header, footer, nav {
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── Typography ─── */
+
+.headline-massive {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.85;
+}
+
+.headline-outlined {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--brutal-red);
+}
+
+.label-mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.label-mono-red {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 0, 0, 0.5);
+}
+
+.body-text {
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Grid Cells ─── */
+
+.grid-cell {
+  border: 1px solid rgba(255, 0, 0, 0.25);
+  padding: 40px;
+  position: relative;
+}
+
+.corner-label {
+  position: absolute;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.corner-label.top-left { top: 12px; left: 12px; }
+.corner-label.top-right { top: 12px; right: 12px; }
+.corner-label.bottom-left { bottom: 12px; left: 12px; }
+.corner-label.bottom-right { bottom: 12px; right: 12px; }
+
+/* Cyan corner label */
+.corner-label-cyan {
+  position: absolute;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(0, 255, 255, 0.5);
+  top: 12px;
+  right: 12px;
+}
+
+/* ─── Marquee ─── */
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  animation: marquee 20s linear infinite;
+  white-space: nowrap;
+}
+
+.marquee-wrapper {
+  overflow: hidden;
+  background: var(--brutal-red);
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 768px) {
+  .grid-cell {
+    padding: 24px;
+  }
+  :root {
+    --grid-size: 40px;
+  }
+}
+
+/* ─── Scroll Reveal ─── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
+
+/* Stagger children */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal-stagger.visible > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.05s; }
+.reveal-stagger.visible > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+.reveal-stagger.visible > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.15s; }
+.reveal-stagger.visible > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.reveal-stagger.visible > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.25s; }
+.reveal-stagger.visible > *:nth-child(6) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+
+/* ─── GitHub Rainbow CTA ─── */
+
+@keyframes rainbow-border {
+  0% { border-color: #ff2020; box-shadow: 0 0 15px rgba(255, 32, 32, 0.3); }
+  16% { border-color: #ff8800; box-shadow: 0 0 15px rgba(255, 136, 0, 0.3); }
+  33% { border-color: #ffdd00; box-shadow: 0 0 15px rgba(255, 221, 0, 0.3); }
+  50% { border-color: #00ff88; box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); }
+  66% { border-color: #00ccff; box-shadow: 0 0 15px rgba(0, 204, 255, 0.3); }
+  83% { border-color: #aa44ff; box-shadow: 0 0 15px rgba(170, 68, 255, 0.3); }
+  100% { border-color: #ff2020; box-shadow: 0 0 15px rgba(255, 32, 32, 0.3); }
+}
+
+.github-rainbow {
+  border: 2px solid #ff2020;
+  animation: rainbow-border 4s linear infinite;
+  position: relative;
+}
+
+.github-rainbow:hover {
+  animation-duration: 1.5s;
+  box-shadow: 0 0 25px rgba(255, 32, 32, 0.5);
+}
+
+/* Selection */
+::selection {
+  background: var(--brutal-red);
+  color: var(--brutal-white);
+}

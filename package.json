@@ -1,31 +1,28 @@
 {
-  "name": "moltstream",
+  "name": "moltstream-site",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.4.0",
-  "description": "Agent-native streaming infrastructure",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "clean": "turbo run clean"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18",
+    "next": "14.2.35",
+    "@supabase/supabase-js": "^2.49.0",
+    "@google/generative-ai": "^0.24.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "eslint": "^9.0.0",
-    "prettier": "^3.4.0",
-    "turbo": "^2.4.0",
-    "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "author": "Tyler Skaggs <skaggsxyz@users.noreply.github.com>",
-  "license": "MIT",
-  "packageManager": "pnpm@10.32.1"
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35"
+  }
 }
