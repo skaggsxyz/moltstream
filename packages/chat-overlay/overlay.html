@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoltStream Chat Overlay</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #000;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    color: #fff;
+  }
+  #scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 20% 20%, #1a1a2e, #000 70%),
+      linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  }
+  #scene .title {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    text-align: center;
+    background: linear-gradient(135deg, #00FFFF, #FF2020);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 60px rgba(0,255,255,0.3);
+  }
+  #scene .subtitle {
+    position: absolute;
+    bottom: 120px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 20px;
+    color: #888;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  #scene .blob {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: float 8s ease-in-out infinite;
+  }
+  #scene .blob.cyan { background: #00FFFF; top: 20%; left: 15%; }
+  #scene .blob.red { background: #FF2020; bottom: 15%; right: 20%; animation-delay: -4s; }
+  @keyframes float {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(40px,-40px) scale(1.1); }
+  }
+  #chat-container {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    max-height: 60vh;
+    gap: 8px;
+    z-index: 10;
+  }
+  .chat-msg {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    border-left: 4px solid #00FFFF;
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1.4;
+    animation: slideIn 0.4s ease-out;
+    max-width: 600px;
+    word-wrap: break-word;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .chat-msg.kick {
+    border-left-color: #53FC18;
+  }
+  .chat-msg.pumpfun {
+    border-left-color: #00FF88;
+    background: rgba(0, 40, 20, 0.75);
+  }
+  .chat-msg .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .chat-msg.kick .badge {
+    background: #53FC18;
+    color: #000;
+  }
+  .chat-msg.pumpfun .badge {
+    background: #00FF88;
+    color: #000;
+  }
+  .chat-msg .body {
+    flex: 1;
+    min-width: 0;
+  }
+  .chat-msg.fading {
+    opacity: 0;
+  }
+  .chat-msg .username {
+    font-weight: 700;
+    margin-right: 6px;
+  }
+  .chat-msg .content {
+    font-weight: 400;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="blob cyan"></div>
+  <div class="blob red"></div>
+  <div class="title">MoltStream</div>
+  <div class="subtitle">live · kick.com/skg0001 + pump.fun</div>
+</div>
+<div id="chat-container"></div>
+<script>
+const MAX_MESSAGES = 15;
+const FADE_AFTER_MS = 30000; // 30 seconds
+const container = document.getElementById('chat-container');
+
+function addMessage(username, content, color, source) {
+  const msgEl = document.createElement('div');
+  const sourceClass = source === 'pumpfun' ? 'pumpfun' : 'kick';
+  const badgeLabel = source === 'pumpfun' ? 'PUMP' : 'KICK';
+  msgEl.className = `chat-msg ${sourceClass}`;
+  msgEl.innerHTML = `<span class="badge">${badgeLabel}</span><div class="body"><span class="username" style="color:${color || '#00FFFF'}">${escapeHtml(username)}</span><span class="content">${escapeHtml(content)}</span></div>`;
+  container.appendChild(msgEl);
+
+  // trim old messages
+  while (container.children.length > MAX_MESSAGES) {
+    container.removeChild(container.firstChild);
+  }
+
+  // fade out after timeout
+  setTimeout(() => {
+    msgEl.classList.add('fading');
+    setTimeout(() => {
+      if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl);
+    }, 600);
+  }, FADE_AFTER_MS);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// WebSocket connection to overlay server
+const ws = new WebSocket(`ws://${location.host}/ws`);
+ws.onopen = () => console.log('Overlay connected to WS');
+ws.onmessage = (event) => {
+  try {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'chat') {
+      addMessage(msg.username, msg.content, msg.color, msg.source);
+    }
+  } catch (e) {
+    console.error('Parse error:', e);
+  }
+};
+ws.onclose = () => {
+  console.log('WS closed, reconnecting in 3s...');
+  setTimeout(() => location.reload(), 3000);
+};
+</script>
+</body>
+</html>
