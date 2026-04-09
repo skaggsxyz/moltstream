@@ -1,4 +1,18 @@
+"use client";
+
+import { useState } from "react";
+
+const CA = "6yCxQzQL8JsgXiCALA3921VJqXJvjHBLJFJXfiCYpump";
+
 export default function Navbar() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(CA);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-[60px] bg-brutal-black/95 backdrop-blur-sm border-b border-brutal-red/30 flex items-center justify-between px-6 md:px-10">
       <div className="flex items-center gap-3">
@@ -13,7 +27,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="hidden md:flex items-center gap-8">
+      <div className="hidden md:flex items-center gap-6">
         {["PROTOCOL", "FEATURES", "LIVE", "CREATOR", "DOCS"].map((link) => (
           <a
             key={link}
@@ -26,6 +40,22 @@ export default function Navbar() {
         <span className="font-mono text-[10px] text-brutal-red/50 tracking-[0.1em]">
           v0.7.0
         </span>
+
+        {/* CA copy button */}
+        <button
+          onClick={handleCopy}
+          className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] bg-brutal-red/10 border border-brutal-red/50 hover:border-brutal-red hover:bg-brutal-red/20 text-brutal-white px-3 py-1.5 transition-all duration-200 cursor-pointer"
+          title={CA}
+        >
+          <span className="text-brutal-red font-bold">CA</span>
+          <span className="text-brutal-white/80 hidden lg:inline">
+            {CA.slice(0, 4)}…{CA.slice(-4)}
+          </span>
+          <span className="text-brutal-white/50 group-hover:text-brutal-white transition-colors">
+            {copied ? "✓" : "COPY"}
+          </span>
+        </button>
+
         <a
           href="https://x.com/skaggsxyz"
           target="_blank"
@@ -38,7 +68,15 @@ export default function Navbar() {
           <span>@SKAGGSXYZ</span>
         </a>
       </div>
+
+      {/* Mobile CA button (shown when desktop nav hidden) */}
+      <button
+        onClick={handleCopy}
+        className="md:hidden flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] bg-brutal-red/10 border border-brutal-red/50 text-brutal-white px-3 py-1.5"
+      >
+        <span className="text-brutal-red font-bold">CA</span>
+        <span className="text-brutal-white/50">{copied ? "✓" : "COPY"}</span>
+      </button>
     </nav>
   );
 }
-
