@@ -2,11 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 
-const CA = "6yCxQzQL8JsgXiCALA3921VJqXJvjHBLJFJXfiCYpump";
-
 export default function Hero() {
   const [copied, setCopied] = useState(false);
-  const [copiedCa, setCopiedCa] = useState(false);
   const [stars, setStars] = useState<number | null>(null);
   const [displayStars, setDisplayStars] = useState(0);
   const animRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,12 +40,6 @@ export default function Hero() {
     navigator.clipboard.writeText("npx moltstream init");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCopyCa = () => {
-    navigator.clipboard.writeText(CA);
-    setCopiedCa(true);
-    setTimeout(() => setCopiedCa(false), 2000);
   };
 
   return (
@@ -92,24 +83,6 @@ export default function Hero() {
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-brutal-white/30 group-hover:text-brutal-red transition-colors">
                 {copied ? "COPIED ✓" : "COPY"}
-              </span>
-            </button>
-          </div>
-
-          {/* $MOLT CA Block */}
-          <div className="mt-3">
-            <button
-              onClick={handleCopyCa}
-              className="group flex items-center gap-3 bg-brutal-white/5 border border-brutal-white/20 hover:border-brutal-white/60 px-5 py-3.5 transition-all duration-200 cursor-pointer w-full max-w-md"
-            >
-              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-brutal-white/40 group-hover:text-brutal-white transition-colors">
-                CA
-              </span>
-              <span className="font-mono text-[13px] text-brutal-white/90 flex-1 text-left truncate">
-                {CA}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-brutal-white/30 group-hover:text-brutal-white transition-colors whitespace-nowrap">
-                {copiedCa ? "COPIED ✓" : "COPY"}
               </span>
             </button>
           </div>
