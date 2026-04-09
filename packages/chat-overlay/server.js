@@ -26,13 +26,34 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 function getArg(name, def) {
   const idx = args.indexOf(`--${name}`);
-  return idx >= 0 && args[idx + 1] ? args[idx + 1] : def;
+  // Return the raw arg (including empty string) when flag is present,
+  // otherwise fall back to the default. Empty string = explicitly disabled.
+  if (idx >= 0 && idx + 1 < args.length) return args[idx + 1];
+  return def;
+}
+function hasFlag(name) {
+  return args.includes(`--${name}`);
 }
 
 const CHANNEL = getArg('channel', 'skg0001');
 const CHATROOM_ID = parseInt(getArg('chatroom', '99424831'), 10);
 const PORT = parseInt(getArg('port', '3939'), 10);
-const PUMPFUN_MINT = getArg('pumpfun', 'DvPrtU3yodB42CafgjmjoLV7zeNH2YMBB73guBZLpump');
+// --no-pumpfun disables pump.fun entirely; --pumpfun "" also works
+const PUMPFUN_DISABLED = hasFlag('no-pumpfun');
+const PUMPFUN_MINT = PUMPFUN_DISABLED ? '' : getArg('pumpfun', 'DvPrtU3yodB42CafgjmjoLV7zeNH2YMBB73guBZLpump');
+
+// Anam.ai config (Mei / Liv persona)
+// Secrets MUST come from env — no hardcoded fallbacks in git.
+const ANAM_API_KEY = process.env.ANAM_API_KEY;
+const ANAM_PERSONA_ID = process.env.ANAM_PERSONA_ID || '85c53e0b-c9b4-4409-a4ed-0bdded9f9800';
+if (!ANAM_API_KEY) {
+  console.error('\n❌ ANAM_API_KEY env var is required. Set it in .env or export it.');
+  console.error('   Example: export ANAM_API_KEY="your-key-here"\n');
+  process.exit(1);
+}
+
+// Cached full persona config (loaded once at boot from Anam API)
+let cachedPersonaConfig = null;
 
 const PUSHER_WS = 'wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0-rc2&flash=false';
 
@@ -47,9 +68,95 @@ console.log(`  ╚════════════════════�
 // ─── Browser clients (OBS Browser Source) ───
 const browserClients = new Set();
 
-// ─── HTTP Server (serves overlay.html) ───
-const server = createServer((req, res) => {
-  if (req.url === '/' || req.url === '/chat-overlay' || req.url === '/index.html') {
+// ─── HTTP Server (serves overlay.html + mei.html + session token API) ───
+// We use EPHEMERAL session tokens because Explorer-tier overrides like
+//   maxSessionLengthSeconds, skipGreeting, voiceDetectionOptions
+// can ONLY be set inline (per OpenAPI schema for /v1/auth/session-token).
+// Stateful tokens (personaId only) lock us out of these per-session knobs.
+// Reference: https://anam.ai/docs/api-reference/create-session-token
+async function loadPersonaConfig() {
+  console.log(`[anam] Loading persona ${ANAM_PERSONA_ID}...`);
+  const res = await fetch(`https://api.anam.ai/v1/personas/${ANAM_PERSONA_ID}`, {
+    headers: { 'Authorization': `Bearer ${ANAM_API_KEY}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to load persona: ${res.status}`);
+  }
+  const persona = await res.json();
+  // Build ephemeral personaConfig matching the createSessionToken schema:
+  cachedPersonaConfig = {
+    name: persona.name,
+    avatarId: persona.avatar.id,
+    avatarModel: persona.avatarModel || 'cara-3',
+    voiceId: persona.voice.id,
+    llmId: persona.llmId,
+    systemPrompt: persona.brain?.systemPrompt || '',
+    // Explorer plan max session length: 600s (10 min hard cap)
+    maxSessionLengthSeconds: 600,
+    // Don't waste seconds on greeting on every reconnect
+    skipGreeting: true,
+    // VAD: keep idle session alive for 60s of silence (max anam allows)
+    voiceDetectionOptions: {
+      endOfSpeechSensitivity: 0.5,
+      silenceBeforeSkipTurnSeconds: 30,
+      silenceBeforeSessionEndSeconds: 60,
+    },
+  };
+  console.log(`[anam] ✅ Persona: ${persona.name} (avatar: ${persona.avatar.displayName}, voice: ${persona.voice.displayName}, tools: ${(persona.tools||[]).length})`);
+  console.log(`[anam] systemPrompt: ${(persona.brain?.systemPrompt || '').slice(0, 80)}...`);
+  return cachedPersonaConfig;
+}
+
+async function endStaleSessions() {
+  try {
+    const res = await fetch('https://api.anam.ai/v1/sessions?limit=10', {
+      headers: { 'Authorization': `Bearer ${ANAM_API_KEY}` },
+    });
+    if (!res.ok) return;
+    const { data } = await res.json();
+    const stale = data.filter((s) => !s.endTime);
+    for (const s of stale) {
+      console.log(`[anam] Ending stale session ${s.id}...`);
+      await fetch(`https://api.anam.ai/v1/sessions/${s.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${ANAM_API_KEY}` },
+      }).catch(() => {});
+    }
+    if (stale.length > 0) {
+      console.log(`[anam] Cleaned ${stale.length} stale session(s), waiting 5s for release...`);
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  } catch (err) {
+    console.error('[anam] endStaleSessions error:', err.message);
+  }
+}
+
+async function getAnamSessionToken() {
+  if (!cachedPersonaConfig) {
+    await loadPersonaConfig();
+  }
+  const res = await fetch('https://api.anam.ai/v1/auth/session-token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${ANAM_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      clientLabel: 'moltstream-overlay',
+      personaConfig: cachedPersonaConfig,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Anam API ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+const server = createServer(async (req, res) => {
+  // Strip query string for routing (cache-busters like ?v=123 shouldn't 404)
+  const urlPath = (req.url || '/').split('?')[0];
+  if (urlPath === '/' || urlPath === '/chat-overlay' || urlPath === '/index.html') {
     const htmlPath = join(__dirname, 'overlay.html');
     if (existsSync(htmlPath)) {
       res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -57,6 +164,35 @@ const server = createServer((req, res) => {
     } else {
       res.writeHead(404);
       res.end('overlay.html not found');
+    }
+  } else if (urlPath === '/mei' || urlPath === '/mei.html') {
+    const htmlPath = join(__dirname, 'mei.html');
+    if (existsSync(htmlPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(readFileSync(htmlPath));
+    } else {
+      res.writeHead(404);
+      res.end('mei.html not found');
+    }
+  } else if (urlPath.startsWith('/music')) {
+    const htmlPath = join(__dirname, 'music.html');
+    if (existsSync(htmlPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(readFileSync(htmlPath));
+    } else {
+      res.writeHead(404);
+      res.end('music.html not found');
+    }
+  } else if (urlPath === '/api/session-token' && req.method === 'POST') {
+    try {
+      const data = await getAnamSessionToken();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(data));
+      console.log('[anam] session token issued');
+    } catch (err) {
+      console.error('[anam] token error:', err.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
     }
   } else {
     res.writeHead(404);
@@ -171,10 +307,17 @@ function scheduleReconnect() {
 
 // ─── PumpFun Chat via pump-chat-client ───
 let pumpClient = null;
+let pumpErrorCount = 0;
+let pumpSilentMode = false;
+let pumpHibernating = false;
 
 function connectPumpFun() {
   if (!PUMPFUN_MINT) {
     console.log('[pumpfun] No mint address provided, skipping');
+    return;
+  }
+  if (pumpHibernating) {
+    console.log('[pumpfun] Hibernating, will resume later');
     return;
   }
 
@@ -188,10 +331,12 @@ function connectPumpFun() {
 
   pumpClient.on('connected', () => {
     console.log('[pumpfun] ✅ Connected to chat room');
+    pumpErrorCount = 0;
+    pumpSilentMode = false;
   });
 
   pumpClient.on('disconnected', () => {
-    console.log('[pumpfun] Disconnected');
+    if (!pumpSilentMode) console.log('[pumpfun] Disconnected');
   });
 
   pumpClient.on('message', (msg) => {
@@ -211,26 +356,57 @@ function connectPumpFun() {
   });
 
   pumpClient.on('error', (err) => {
-    console.error('[pumpfun] Error:', err?.message || err);
+    pumpErrorCount++;
+    if (pumpErrorCount === 3) {
+      console.warn('[pumpfun] 3 errors in a row, entering silent mode (logs suppressed)');
+      pumpSilentMode = true;
+    }
+    if (pumpErrorCount >= 5) {
+      console.warn('[pumpfun] 5 errors — hibernating for 10 minutes');
+      pumpHibernating = true;
+      try { pumpClient.disconnect(); } catch {}
+      setTimeout(() => {
+        pumpHibernating = false;
+        pumpErrorCount = 0;
+        pumpSilentMode = false;
+        console.log('[pumpfun] Waking up after hibernation');
+        connectPumpFun();
+      }, 10 * 60 * 1000);
+      return;
+    }
+    if (!pumpSilentMode) console.error('[pumpfun] Error:', (err?.message || err)?.toString().slice(0, 100));
   });
 
   pumpClient.on('serverError', (err) => {
-    console.error('[pumpfun] Server error:', err);
+    if (!pumpSilentMode) console.error('[pumpfun] Server error:', String(err).slice(0, 100));
   });
 
   pumpClient.on('maxReconnectAttemptsReached', () => {
-    console.error('[pumpfun] Max reconnect attempts reached, will retry in 30s');
-    setTimeout(connectPumpFun, 30000);
+    console.error('[pumpfun] Max reconnect attempts reached, hibernating 10min');
+    pumpHibernating = true;
+    setTimeout(() => {
+      pumpHibernating = false;
+      pumpErrorCount = 0;
+      pumpSilentMode = false;
+      connectPumpFun();
+    }, 10 * 60 * 1000);
   });
 
   pumpClient.connect();
 }
 
 // ─── Start ───
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`[server] HTTP + WS listening on http://localhost:${PORT}`);
   console.log(`[server] Overlay URL: http://localhost:${PORT}/chat-overlay`);
-  console.log(`[server] Add this as Browser Source in OBS\n`);
+  console.log(`[server] Mei URL:     http://localhost:${PORT}/mei`);
+  console.log(`[server] Add as Browser Sources in OBS\n`);
+  try {
+    await loadPersonaConfig();
+    await endStaleSessions();
+  } catch (err) {
+    console.error('[anam] boot error:', err.message);
+  }
   connectKick();
   connectPumpFun();
 });

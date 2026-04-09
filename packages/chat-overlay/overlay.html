@@ -4,118 +4,258 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MoltStream Chat Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #0B0F14;
+    --bg-deep: #05080B;
+    --cyan: #00FFFF;
+    --cyan-dim: #00FFFF22;
+    --cyan-glow: rgba(0, 255, 255, 0.4);
+    --red: #FF2020;
+    --green: #53FC18;
+    --pump: #00FF88;
+    --text: #ffffff;
+    --text-dim: #8a9099;
+    --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    --sans: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
-    background: #000;
-    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    font-family: var(--sans);
     overflow: hidden;
     width: 100vw;
     height: 100vh;
-    color: #fff;
+    color: var(--text);
   }
+
+  /* ===== Background scene ===== */
   #scene {
     position: absolute;
     inset: 0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(0,255,255,0.08), transparent 60%),
+      radial-gradient(circle at 85% 80%, rgba(255,32,32,0.06), transparent 60%),
+      linear-gradient(180deg, #0B0F14 0%, #05080B 100%);
+  }
+  /* grid background */
+  #scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* ===== Top-left logo block (MoltStream brand) ===== */
+  #logo {
+    position: absolute;
+    top: 28px;
+    left: 32px;
+    z-index: 20;
+    font-family: var(--mono);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  #logo .coords {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  #logo .wordmark {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -1.5px;
+    color: var(--text);
+    line-height: 1;
+    margin-top: 2px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background:
-      radial-gradient(circle at 20% 20%, #1a1a2e, #000 70%),
-      linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    gap: 12px;
   }
-  #scene .title {
-    font-size: 64px;
-    font-weight: 900;
-    letter-spacing: -2px;
-    text-align: center;
-    background: linear-gradient(135deg, #00FFFF, #FF2020);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 60px rgba(0,255,255,0.3);
+  #logo .wordmark::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 12px var(--red), 0 0 24px rgba(255,32,32,0.5);
+    animation: pulse 2s ease-in-out infinite;
   }
-  #scene .subtitle {
+  #logo .tag {
+    font-size: 12px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  #logo .block-id {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    margin-top: 6px;
+    border-top: 1px solid var(--cyan-dim);
+    padding-top: 6px;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  /* ===== Top-right live status bar ===== */
+  #status-bar {
     position: absolute;
-    bottom: 120px;
+    top: 28px;
+    right: 32px;
+    z-index: 20;
+    font-family: var(--mono);
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+  }
+  #status-bar .live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 2px;
+  }
+  #status-bar .live::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  #status-bar .sources {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  #status-bar .sources .kick-tag { color: var(--green); }
+  #status-bar .sources .pump-tag { color: var(--pump); }
+
+  /* ===== Bottom ticker ===== */
+  #ticker {
+    position: absolute;
+    bottom: 0;
     left: 0;
     right: 0;
-    text-align: center;
-    font-size: 20px;
-    color: #888;
-    letter-spacing: 4px;
-    text-transform: uppercase;
+    height: 32px;
+    background: rgba(0, 255, 255, 0.06);
+    border-top: 1px solid var(--cyan-dim);
+    border-bottom: 1px solid var(--cyan-dim);
+    overflow: hidden;
+    z-index: 15;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
   }
-  #scene .blob {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.4;
-    animation: float 8s ease-in-out infinite;
+  #ticker .track {
+    display: inline-block;
+    white-space: nowrap;
+    padding-left: 100%;
+    animation: scroll 40s linear infinite;
   }
-  #scene .blob.cyan { background: #00FFFF; top: 20%; left: 15%; }
-  #scene .blob.red { background: #FF2020; bottom: 15%; right: 20%; animation-delay: -4s; }
-  @keyframes float {
-    0%, 100% { transform: translate(0,0) scale(1); }
-    50% { transform: translate(40px,-40px) scale(1.1); }
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
   }
+  #ticker .dot { color: var(--red); margin: 0 20px; }
+
+  /* ===== Chat container ===== */
   #chat-container {
     position: absolute;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
+    left: 32px;
+    right: 32px;
+    bottom: 56px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    max-height: 60vh;
-    gap: 8px;
+    max-height: 78vh;
+    gap: 12px;
     z-index: 10;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 100%);
   }
+
   .chat-msg {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(12px);
-    border-left: 4px solid #00FFFF;
-    border-radius: 8px;
-    padding: 10px 16px;
-    color: #fff;
-    font-size: 18px;
-    line-height: 1.4;
-    animation: slideIn 0.4s ease-out;
-    max-width: 600px;
+    background: rgba(11, 15, 20, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-left: 4px solid var(--cyan);
+    border-radius: 6px;
+    padding: 14px 20px;
+    color: var(--text);
+    font-size: 24px;
+    line-height: 1.45;
+    animation: slideIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+    max-width: 760px;
     word-wrap: break-word;
     opacity: 1;
-    transition: opacity 0.5s ease;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    box-shadow:
+      0 6px 30px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(0, 255, 255, 0.08);
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 14px;
+    font-family: var(--sans);
+    font-weight: 500;
   }
   .chat-msg.kick {
-    border-left-color: #53FC18;
+    border-left-color: var(--green);
+    box-shadow:
+      0 6px 30px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(83, 252, 24, 0.12);
   }
   .chat-msg.pumpfun {
-    border-left-color: #00FF88;
-    background: rgba(0, 40, 20, 0.75);
+    border-left-color: var(--pump);
+    background: rgba(0, 30, 18, 0.82);
+    box-shadow:
+      0 6px 30px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(0, 255, 136, 0.15);
   }
+
   .chat-msg .badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 900;
-    padding: 2px 8px;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 3px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 3px;
+    height: 24px;
   }
   .chat-msg.kick .badge {
-    background: #53FC18;
+    background: var(--green);
     color: #000;
   }
   .chat-msg.pumpfun .badge {
-    background: #00FF88;
+    background: var(--pump);
     color: #000;
   }
   .chat-msg .body {
@@ -124,31 +264,69 @@
   }
   .chat-msg.fading {
     opacity: 0;
+    transform: translateY(-24px);
   }
   .chat-msg .username {
     font-weight: 700;
-    margin-right: 6px;
+    margin-right: 10px;
+    font-family: var(--mono);
+    font-size: 20px;
   }
-  .chat-msg .content {
+  .chat-msg .username::after {
+    content: ' ›';
+    color: var(--text-dim);
     font-weight: 400;
   }
+  .chat-msg .content {
+    font-weight: 500;
+  }
+
   @keyframes slideIn {
-    from { transform: translateY(20px); opacity: 0; }
+    from { transform: translateY(30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
 </style>
 </head>
 <body>
-<div id="scene">
-  <div class="blob cyan"></div>
-  <div class="blob red"></div>
-  <div class="title">MoltStream</div>
-  <div class="subtitle">live · kick.com/skg0001 + pump.fun</div>
+
+<div id="scene"></div>
+
+<!-- MoltStream brand block (top-left) -->
+<div id="logo">
+  <div class="coords">47.3769° N / 8.5417° E</div>
+  <div class="wordmark">MOLTSTREAM</div>
+  <div class="tag">// AUTONOMOUS STREAMING RUNTIME</div>
+  <div class="block-id">BLOCK: M-001 &nbsp;·&nbsp; VERSION 0.7.0</div>
 </div>
+
+<!-- Live status (top-right) -->
+<div id="status-bar">
+  <div class="live">● LIVE</div>
+  <div class="sources">
+    <span class="kick-tag">KICK</span> / skg0001
+  </div>
+</div>
+
+<!-- Bottom ticker -->
+<div id="ticker">
+  <div class="track">
+    // AUTONOMOUS AI STREAMING INFRASTRUCTURE <span class="dot">●</span>
+    DEPLOY YOUR AGENT IN 5 MINUTES <span class="dot">●</span>
+    STREAM ON KICK / YOUTUBE / TWITCH <span class="dot">●</span>
+    REAL-TIME CONSCIOUSNESS VISUALIZATION <span class="dot">●</span>
+    MULTI-AGENT ORCHESTRATION <span class="dot">●</span>
+    REVENUE ON AUTOPILOT <span class="dot">●</span>
+    // AUTONOMOUS AI STREAMING INFRASTRUCTURE <span class="dot">●</span>
+    DEPLOY YOUR AGENT IN 5 MINUTES <span class="dot">●</span>
+    STREAM ON KICK / YOUTUBE / TWITCH <span class="dot">●</span>
+  </div>
+</div>
+
+<!-- Chat messages -->
 <div id="chat-container"></div>
+
 <script>
-const MAX_MESSAGES = 15;
-const FADE_AFTER_MS = 30000; // 30 seconds
+const MAX_MESSAGES = 25;
 const container = document.getElementById('chat-container');
 
 function addMessage(username, content, color, source) {
@@ -159,18 +337,16 @@ function addMessage(username, content, color, source) {
   msgEl.innerHTML = `<span class="badge">${badgeLabel}</span><div class="body"><span class="username" style="color:${color || '#00FFFF'}">${escapeHtml(username)}</span><span class="content">${escapeHtml(content)}</span></div>`;
   container.appendChild(msgEl);
 
-  // trim old messages
-  while (container.children.length > MAX_MESSAGES) {
-    container.removeChild(container.firstChild);
-  }
+  container.scrollTop = container.scrollHeight;
 
-  // fade out after timeout
-  setTimeout(() => {
-    msgEl.classList.add('fading');
+  while (container.children.length > MAX_MESSAGES) {
+    const oldest = container.firstChild;
+    oldest.classList.add('fading');
     setTimeout(() => {
-      if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl);
-    }, 600);
-  }, FADE_AFTER_MS);
+      if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
+    }, 500);
+    break;
+  }
 }
 
 function escapeHtml(text) {
@@ -179,7 +355,6 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// WebSocket connection to overlay server
 const ws = new WebSocket(`ws://${location.host}/ws`);
 ws.onopen = () => console.log('Overlay connected to WS');
 ws.onmessage = (event) => {

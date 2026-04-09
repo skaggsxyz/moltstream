@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoltStream — Mei (Live AI Avatar)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #000;
+    color: #fff;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+  #video-wrapper {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+  #avatar-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+  #status {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border-left: 3px solid #00FFFF;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #00FFFF;
+    z-index: 10;
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+  #status.error { border-color: #FF2020; color: #FF2020; }
+  #status.ready { border-color: #00FF88; color: #00FF88; }
+  #last-msg {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    right: 40px;
+    padding: 14px 20px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    border-left: 4px solid #00FFFF;
+    border-radius: 8px;
+    font-size: 18px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    max-width: 700px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.6);
+  }
+  #last-msg.visible { opacity: 1; }
+  #last-msg .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #00FFFF;
+    color: #000;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-right: 8px;
+    text-transform: uppercase;
+  }
+  #last-msg.kick .badge { background: #53FC18; }
+  #last-msg.pumpfun .badge { background: #00FF88; }
+  #last-msg .username { font-weight: 700; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div id="video-wrapper">
+  <video id="avatar-video" autoplay playsinline></video>
+</div>
+<div id="status">INITIALIZING…</div>
+<div id="last-msg"><span class="badge">KICK</span><span class="username"></span><span class="content"></span></div>
+
+<script type="module">
+import { createClient, AnamEvent } from 'https://esm.sh/@anam-ai/js-sdk@latest';
+
+const statusEl = document.getElementById('status');
+const lastMsgEl = document.getElementById('last-msg');
+const videoEl = document.getElementById('avatar-video');
+
+function setStatus(text, kind = '') {
+  statusEl.textContent = text;
+  statusEl.className = kind;
+}
+
+function showMessage(source, username, content) {
+  lastMsgEl.className = source;
+  lastMsgEl.querySelector('.badge').textContent = source === 'pumpfun' ? 'PUMP' : 'KICK';
+  lastMsgEl.querySelector('.username').textContent = username + ': ';
+  lastMsgEl.querySelector('.content').textContent = content;
+  lastMsgEl.classList.add('visible');
+  clearTimeout(lastMsgEl._hideTimer);
+  lastMsgEl._hideTimer = setTimeout(() => lastMsgEl.classList.remove('visible'), 10000);
+}
+
+// ============================================================================
+// Anam client lifecycle — follows official docs:
+//   https://anam.ai/docs/concepts/events
+//   https://anam.ai/docs/sdk-reference/talk-commands
+// ============================================================================
+let anamClient = null;
+let retryCount = 0;
+let initInFlight = false;
+let sessionReady = false;       // true between SESSION_READY and CONNECTION_CLOSED
+let sessionStartedAt = 0;       // when SESSION_READY fired
+let teardownInFlight = false;
+let generationId = 0;           // increments on every initAnam, used to ignore stale callbacks
+
+async function teardownClient() {
+  if (!anamClient || teardownInFlight) return;
+  teardownInFlight = true;
+  sessionReady = false;
+  try {
+    // Per docs: removeListener for all events to prevent memory leaks
+    try { anamClient.removeAllListeners?.(); } catch {}
+    try { anamClient.stopStreaming?.(); } catch {}
+  } catch (err) {
+    console.warn('[anam] teardown error:', err?.message || err);
+  }
+  anamClient = null;
+  teardownInFlight = false;
+}
+
+async function initAnam() {
+  if (initInFlight) {
+    console.log('[anam] init already in flight, skipping');
+    return;
+  }
+  initInFlight = true;
+  const myGeneration = ++generationId;  // tag this init attempt
+
+  try {
+    await teardownClient();
+
+    setStatus('FETCHING SESSION TOKEN…');
+    const res = await fetch('/api/session-token', { method: 'POST' });
+    if (!res.ok) throw new Error(`Token request failed: ${res.status}`);
+    const { sessionToken } = await res.json();
+    if (!sessionToken) throw new Error('No sessionToken in response');
+
+    // If a newer init started while we were awaiting, abort this one
+    if (myGeneration !== generationId) {
+      console.log('[anam] stale init aborted (generation mismatch)');
+      return;
+    }
+
+    setStatus('CONNECTING TO ANAM…');
+    const client = createClient(sessionToken, {
+      disableInputAudio: true,
+    });
+
+    // Attach all listeners BEFORE streamToVideoElement (per docs)
+    // ----- Connection lifecycle -----
+    client.addListener(AnamEvent.CONNECTION_ESTABLISHED, () => {
+      if (myGeneration !== generationId) return;
+      console.log('[anam] CONNECTION_ESTABLISHED');
+      setStatus('WAITING FOR SESSION READY…');
+    });
+
+    client.addListener(AnamEvent.SESSION_READY, (sessionId) => {
+      if (myGeneration !== generationId) return;
+      console.log('[anam] SESSION_READY:', sessionId);
+      sessionReady = true;
+      sessionStartedAt = Date.now();
+      retryCount = 0;
+      setStatus('LIVE · MEI READY', 'ready');
+    });
+
+    client.addListener(AnamEvent.VIDEO_PLAY_STARTED, () => {
+      if (myGeneration !== generationId) return;
+      console.log('[anam] VIDEO_PLAY_STARTED');
+    });
+
+    client.addListener(AnamEvent.CONNECTION_CLOSED, (reason, details) => {
+      if (myGeneration !== generationId) return;
+      const livedFor = sessionStartedAt ? Date.now() - sessionStartedAt : 0;
+      console.log(`[anam] CONNECTION_CLOSED after ${livedFor}ms reason=${reason || 'unknown'} details=${JSON.stringify(details || {})}`);
+      sessionReady = false;
+      sessionStartedAt = 0;
+
+      // Distinguish clean engine cycle (lived long) vs error (died fast)
+      const cleanClose = livedFor > 30000;
+      if (cleanClose) {
+        setStatus('RECONNECTING (clean cycle)…');
+        retryCount = 0;
+        setTimeout(() => initAnam(), 1500);
+      } else {
+        setStatus('RECONNECTING…', 'error');
+        scheduleRetry();
+      }
+    });
+
+    client.addListener(AnamEvent.SERVER_WARNING, (msg) => {
+      if (myGeneration !== generationId) return;
+      console.warn('[anam] SERVER_WARNING:', msg);
+    });
+
+    // Commit only after listeners attached. If init was superseded — throw out.
+    if (myGeneration !== generationId) {
+      try { client.stopStreaming?.(); } catch {}
+      return;
+    }
+    anamClient = client;
+
+    await client.streamToVideoElement('avatar-video');
+    // Note: do NOT set sessionReady=true here — wait for SESSION_READY event
+  } catch (err) {
+    console.error('[anam] init error:', err);
+    const msg = (err && err.message) || String(err);
+    setStatus('ERROR: ' + msg.slice(0, 80), 'error');
+    scheduleRetry();
+  } finally {
+    initInFlight = false;
+  }
+}
+
+function scheduleRetry() {
+  retryCount++;
+  // Linear backoff: 2s, 4s, 6s, 8s, capped at 8s
+  const delay = Math.min(8000, 2000 * retryCount);
+  console.log(`[anam] retry #${retryCount} in ${delay}ms`);
+  setStatus(`RECONNECTING… (${delay/1000}s)`);
+  setTimeout(() => initAnam(), delay);
+}
+
+// Chat WebSocket (same server)
+let chatWs = null;
+let messageQueue = [];
+let processing = false;
+const MIN_GAP_MS = 12000;       // min seconds between Mei replies
+const MAX_QUEUE = 3;            // drop oldest if longer
+const recentTexts = new Set();  // dedupe identical comments
+let lastSentAt = 0;
+
+async function sendToMei(text) {
+  // Guard: only talk when session is fully ready (per docs)
+  if (!anamClient || !sessionReady) {
+    console.log('[mei] skip send (session not ready):', text.slice(0, 60));
+    return false;
+  }
+  try {
+    // Use official talk() method, NOT undocumented sendUserMessage()
+    await anamClient.talk(text);
+    console.log('[mei] talk():', text);
+    return true;
+  } catch (err) {
+    // Likely "no active stream" — session died between check and call
+    console.error('[mei] talk error:', err?.message || err);
+    return false;
+  }
+}
+
+async function processQueue() {
+  if (processing) return;
+  processing = true;
+  while (messageQueue.length > 0) {
+    const msg = messageQueue.shift();
+    // Wait if rate-limited
+    const wait = Math.max(0, MIN_GAP_MS - (Date.now() - lastSentAt));
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+
+    // If session not ready by the time our turn comes, drop the message
+    // (don't let queue stall waiting for reconnect)
+    if (!sessionReady) {
+      console.log('[mei] queue drained while session not ready, dropping:', msg.username);
+      continue;
+    }
+
+    showMessage(msg.source, msg.username, msg.content);
+    const prompt = `${msg.username} says: ${msg.content}`;
+    const ok = await sendToMei(prompt);
+    if (ok) lastSentAt = Date.now();
+  }
+  processing = false;
+}
+
+function connectChatWs() {
+  chatWs = new WebSocket(`ws://${location.host}/ws`);
+  chatWs.onopen = () => console.log('[chat] ws connected');
+  chatWs.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.type !== 'chat' || !msg.content || !msg.content.trim()) return;
+      const key = (msg.username + ':' + msg.content).toLowerCase().trim();
+      if (recentTexts.has(key)) {
+        console.log('[chat] dedupe skip:', key.slice(0, 60));
+        return;
+      }
+      recentTexts.add(key);
+      setTimeout(() => recentTexts.delete(key), 60000);
+      // Drop oldest queued messages if backlog grows
+      while (messageQueue.length >= MAX_QUEUE) {
+        const dropped = messageQueue.shift();
+        console.log('[chat] queue full, dropped:', dropped.username);
+      }
+      messageQueue.push(msg);
+      processQueue();
+    } catch {}
+  };
+  chatWs.onclose = () => {
+    console.log('[chat] ws closed, reconnecting...');
+    setTimeout(connectChatWs, 3000);
+  };
+}
+
+// Boot
+initAnam();
+connectChatWs();
+</script>
+</body>
+</html>

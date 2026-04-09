@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MoltStream — Music Layer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: transparent;
+    color: #fff;
+    font-family: 'SF Mono', Menlo, monospace;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+  #now-playing {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+    padding: 10px 18px;
+    border-left: 3px solid #FF00AA;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #FF00AA;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #now-playing.idle { color: #888; border-color: #444; }
+  #now-playing .equalizer {
+    display: inline-block;
+    margin-right: 8px;
+  }
+  #now-playing .bar {
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: #FF00AA;
+    margin-right: 2px;
+    animation: eq 0.6s ease-in-out infinite;
+  }
+  #now-playing .bar:nth-child(2) { animation-delay: 0.15s; }
+  #now-playing .bar:nth-child(3) { animation-delay: 0.3s; }
+  #now-playing .bar:nth-child(4) { animation-delay: 0.45s; }
+  @keyframes eq {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+</style>
+</head>
+<body>
+<div id="now-playing" class="idle">
+  <span class="equalizer">
+    <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+  </span>
+  <span id="track-name">LOADING…</span>
+</div>
+
+<audio id="player" autoplay></audio>
+
+<script>
+const player = document.getElementById('player');
+const trackEl = document.getElementById('track-name');
+const npEl = document.getElementById('now-playing');
+
+// Default: SomaFM Cyberia (cyberpunk/breakbeat). Other options below.
+const STATIONS = {
+  cyberpunk: {
+    name: 'SOMA FM · CYBERIA',
+    url: 'https://ice1.somafm.com/cliqhop-128-mp3',
+  },
+  defcon: {
+    name: 'SOMA FM · DEF CON',
+    url: 'https://ice1.somafm.com/defcon-128-mp3',
+  },
+  drone: {
+    name: 'SOMA FM · DRONE ZONE',
+    url: 'https://ice1.somafm.com/dronezone-128-mp3',
+  },
+  beats: {
+    name: 'SOMA FM · BEAT BLENDER',
+    url: 'https://ice1.somafm.com/beatblender-128-mp3',
+  },
+  synthwave: {
+    name: 'SOMA FM · UNDERGROUND 80S',
+    url: 'https://ice1.somafm.com/u80s-128-mp3',
+  },
+  lofi: {
+    name: 'SOMA FM · GROOVE SALAD',
+    url: 'https://ice1.somafm.com/groovesalad-128-mp3',
+  },
+  dnb: {
+    name: 'SOMA FM · THE TRIP',
+    url: 'https://ice1.somafm.com/thetrip-128-mp3',
+  },
+  secret: {
+    name: 'SOMA FM · SECRET AGENT',
+    url: 'https://ice1.somafm.com/secretagent-128-mp3',
+  },
+  metal: {
+    name: 'SOMA FM · METAL DETECTOR',
+    url: 'https://ice1.somafm.com/metal-128-mp3',
+  },
+  bagel: {
+    name: 'SOMA FM · BAGEL RADIO',
+    url: 'https://ice1.somafm.com/bagel-128-mp3',
+  },
+  indie: {
+    name: 'SOMA FM · INDIE POP ROCKS',
+    url: 'https://ice1.somafm.com/indiepop-128-mp3',
+  },
+  retro: {
+    name: 'SOMA FM · LEFT COAST 70S',
+    url: 'https://ice1.somafm.com/seventies-128-mp3',
+  },
+};
+
+// Read ?station=name from URL
+const params = new URLSearchParams(location.search);
+const stationKey = params.get('station') || 'cyberpunk';
+const station = STATIONS[stationKey] || STATIONS.cyberpunk;
+
+console.log('[music] starting:', station.name, station.url);
+trackEl.textContent = station.name;
+npEl.classList.remove('idle');
+
+player.volume = parseFloat(params.get('vol') || '0.4');
+player.src = station.url;
+
+player.addEventListener('playing', () => {
+  console.log('[music] playing');
+  npEl.classList.remove('idle');
+});
+player.addEventListener('stalled', () => {
+  console.warn('[music] stalled, retrying in 5s');
+  setTimeout(() => { player.load(); player.play().catch(() => {}); }, 5000);
+});
+player.addEventListener('error', (e) => {
+  console.error('[music] error', e);
+  setTimeout(() => { player.load(); player.play().catch(() => {}); }, 5000);
+});
+
+player.play().catch((err) => {
+  console.warn('[music] autoplay failed:', err);
+  // Will retry on first stalled event
+});
+</script>
+</body>
+</html>

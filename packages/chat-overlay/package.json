@@ -1,19 +1,14 @@
 {
-  "name": "@moltstream/chat-overlay",
-  "version": "0.1.0",
-  "description": "Dual-source chat overlay for OBS — Kick + pump.fun token chats rendered as browser overlay",
+  "name": "moltstream-chat-overlay",
+  "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js --port 3939",
-    "setup-obs": "node setup-obs.js",
-    "refresh-obs": "node refresh-obs.js"
+    "dev": "node server.js --port 3940"
   },
   "dependencies": {
-    "obs-websocket-js": "^5.0.6",
+    "obs-websocket-js": "^5.0.8",
     "pump-chat-client": "^1.0.1",
     "ws": "^8.18.0"
-  },
-  "license": "MIT"
+  }
 }

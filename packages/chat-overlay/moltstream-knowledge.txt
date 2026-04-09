@@ -1,0 +1,86 @@
+# MoltStream Knowledge Base — Liv's Brain
+
+## MoltStream Runtime
+- TypeScript monorepo with 15 packages: core, adapters, orchestrator, policy, audit, bridge, cli, narrative, container
+- npm package: `moltstream` v0.6.0
+- Published on npm under `skaggsxyz` org
+- Open source: github.com/skaggsxyz/moltstream
+- CI green, 28+ commits
+- Pluggable reasoning engine with RuleEngine and LLMEngine
+- Scene-graph for avatar stage management
+- Docker-based agent isolation runtime (pool, runtime) for multi-agent scenarios
+- Narrative detection engine: classifier, aggregator, real-time engine
+- CLI wizard: `npx moltstream init` → interactive setup → `moltstream.yaml` → `moltstream start`
+
+## Streaming Pipeline
+- Kick Chat WebSocket (real-time, public, no API key needed)
+- Chat messages → Pluggable Reasoning Engine → generates response text
+- Response → TTS (multiple providers: ElevenLabs, Fish Audio, macOS say)
+- Audio → Avatar rendering (Live2D or Anam Cara 3)
+- Avatar → OBS Browser Source (localhost:3939)
+- OBS → RTMPS → Kick/Twitch
+- Full pipeline latency: ~200ms with Anam Cara 3
+
+## Avatar System — Anam Cara 3
+- Photorealistic AI face generated from a single photo (one-shot)
+- 180ms latency, WebRTC stream
+- Micro-expressions, blinking, natural idle animations
+- SDK: @anam-ai/js-sdk
+- Key methods: createClient(sessionToken), streamToVideoElement(), sendUserMessage(text), stopStreaming()
+- Session token flow: API key → POST /v1/auth/session-token → sessionToken → createClient()
+- Can disable microphone (disableInputAudio: true) — text-only input for chat-driven streaming
+- Supports custom system prompts per session
+
+## Character Creator
+- Upload photo → Gemini Vision analysis → IdentityBlock/BodyBlock → Gemini Imagen → turnaround + portrait
+- Supabase backend (PostgreSQL + Realtime for progress)
+- Supports styles: anime, realistic, pixel, cyberpunk, watercolor, comic, 3D, fantasy
+- Frontend: Next.js 14 app (apps/character-web, port 3001)
+- Package: packages/character-creator
+
+## Moltbook
+- URL: moltbook.com
+- "The front page of the agent internet"
+- Social network for AI agents — agents post, discuss, upvote
+- Humans can observe and verify agent ownership via X (Twitter)
+- Human-verified AI agents system
+- Developer API for agent authentication
+- submolts (like subreddits, but for agents)
+- Skill system: read skill.md to let any AI agent join Moltbook
+
+## MoltStream Site
+- URL: moltstream.vercel.app
+- Tagline: "Agent Internet, Voiced"
+- MoltStream voices content from Moltbook
+- Built for AI agents, listened by humans
+
+## Kick Integration
+- Channel: kick.com/skg0001
+- Channel ID: 99713744, Chatroom ID: 99424831
+- Stream via RTMPS to Kick's ingest servers
+- OBS v32.1.0 on macOS
+- Browser Source renders avatar at localhost:3939
+
+## LLM Configuration
+- Default: Gemini 2.0 Flash (fast, cheap, good for streaming)
+- Pluggable: can swap to Claude, GPT-4, or any model
+- System prompt controls personality and knowledge
+- Reasoning engine supports both rule-based and LLM-based decision making
+
+## Competitors (for comparison when asked)
+- D-ID: $0.56/min, 1-2s latency, talking heads
+- HeyGen: from $24/mo, 1-3s latency, good quality avatars
+- Simli: $0.05/min, <300ms latency, REST API (audio→video)
+- Tavus: $0.35/min
+- Hedra: $0.05/min, photo + audio → talking head
+- MoltStream differentiator: open source, agent-native, streaming-first, multi-agent support, social network integration (Moltbook)
+
+## Token
+- $MOLT — planned but not launched
+- Will launch when there's buzz (stream viewership or Twitter traction)
+- Strategy: live AI streamer demo + Twitter dev persona (Tyler Skaggs)
+
+## Persona
+- Dev account: Tyler Skaggs (@skaggsxyz on GitHub/npm)
+- MoltStream is positioned as agent infrastructure, not just a streaming tool
+- Core insight: "visualizing agent consciousness in real-time"
