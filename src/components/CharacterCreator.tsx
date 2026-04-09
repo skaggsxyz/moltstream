@@ -187,6 +187,7 @@ export default function CharacterCreator() {
   const [facePhotos, setFacePhotos]   = useState<UploadedFile[]>([]);
   const [dragActive, setDragActive]   = useState(false);
   const fileInputRef                  = useRef<HTMLInputElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [characterId,  setCharacterId]  = useState<string | null>(null);
   const [genStatus,    setGenStatus]    = useState<StatusPhase>("analyzing");
   const [resultImages, setResultImages] = useState<string[]>([]);
@@ -507,6 +508,7 @@ export default function CharacterCreator() {
 
               {/* ─── MCP CTA ─── */}
               <div className="border border-[#00FFFF]/30 bg-[#00FFFF]/5 p-4 mb-4">
+                {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
                 <p className="font-mono text-[10px] uppercase tracking-widest text-[#00FFFF] mb-2">// NEXT STEP</p>
                 <p className="font-grotesk font-bold text-sm text-brutal-white uppercase mb-1">Deploy your agent via MCP</p>
                 <p className="body-text text-xs mb-3 text-brutal-white/60">Connect to Claude or Cursor — one command starts your AI streamer on Kick.</p>
